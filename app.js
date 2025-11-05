@@ -8,6 +8,7 @@ import customerRoute from "./routes/customerRoutes.js";
 import artistRoute from "./routes/artistRoutes.js";
 import bookingRoute from "./routes/bookingRoutes.js";
 import userRoute from "./routes/authRoutes.js";
+// import PaymentRouter from "./routes/paymentRoutes .js";
 
 // Initialized express
 const app = express();
@@ -28,6 +29,7 @@ app.use("/api/customers", customerRoute);
 app.use("/api/artists", artistRoute);
 app.use("/api/bookings", bookingRoute);
 app.use("/api/users", userRoute);
+// app.use("/api/payment",PaymentRouter)
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
