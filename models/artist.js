@@ -2,48 +2,57 @@ import mongoose from "mongoose";
 
 const artistSchema = new mongoose.Schema(
   {
+    talent_id: {
+      type: String,
+      unique: true,
+      required: true,
+    },
     name: {
       type: String,
-      required: [true, "Name is required"],
-      trim: true,
+      required: true,
     },
-
-    sku: {
+    category: {
       type: String,
       required: true,
-      unique: true,
     },
-
-    description: {
+    email: {
       type: String,
-      required: false,
+      unique: true,
+      lowercase: true,
+      required: true,
     },
-
-    price: {
+    phone: {
+      type: String,
+      required: true,
+    },
+    bio: {
+      type: String,
+    },
+    experience: {
+      type: String,
+    },
+    portfolio_link: {
+      type: String,
+    },
+    price_per_service: {
       type: Number,
       required: true,
-      min: 0,
     },
-
-    stock: {
+    rating: {
       type: Number,
       default: 0,
     },
-
-    category: {
+    status: {
       type: String,
-      required: false,
+      enum: ["Active", "Inactive"],
+      default: "Active",
     },
-
     createdAt: {
       type: Date,
       default: Date.now,
     },
   },
-  {
-    strict: true,
-    versionKey: false,
-  }
+  { timestamps: true }
 );
 
 export default mongoose.model("Artist", artistSchema);
