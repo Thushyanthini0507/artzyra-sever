@@ -8,8 +8,9 @@ import customerRoute from "./routes/customerRoutes.js";
 import artistRoute from "./routes/artistRoutes.js";
 import bookingRoute from "./routes/bookingRoutes.js";
 import userRoute from "./routes/authRoutes.js";
-import reviewRoute from "./models/review.js";
-// import PaymentRouter from "./routes/paymentRoutes .js";
+import paymentRouter from "./routes/paymentRoutes .js";
+import reviewRouter from "./routes/reviewRoutes .js";
+import ServiceRouter from "./routes/serviceRoutes.js";
 
 // Initialized express
 const app = express();
@@ -27,11 +28,12 @@ app.get("/", (req, res) => {
 connectDB();
 
 app.use("/api/customers", customerRoute);
-app.use("/api/reviews", reviewRoute);
+app.use("/api/reviews", reviewRouter  );
 app.use("/api/artists", artistRoute);
 app.use("/api/bookings", bookingRoute);
 app.use("/api/users", userRoute);
-// app.use("/api/payment",PaymentRouter)
+app.use("/api/payment", paymentRouter);
+app.use("/api/service",ServiceRouter)
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {

@@ -7,12 +7,12 @@ import {
   updateCustomer,
 } from "../controllers/reviewController.js";
 
-const customerRouter = express.Router();
+const reviewRouter = express.Router();
 
-customerRouter.get("/", getAllCustomers);
-customerRouter.get("/:id", getCustomerById);
-customerRouter.post("/", createCustomer);
-customerRouter.put("/:id", updateCustomer);
-customerRouter.delete("/:id", deleteCustomer);
+reviewRouter.get("/", getAllCustomers);
+reviewRouter.get("/:id", getCustomerById);
+reviewRouter.post("/", createCustomer);
+reviewRouter.put("/:id", updateCustomer);
+reviewRouter.delete("/:id", deleteCustomer);
 
-export default customerRouter;
+export default reviewRouter;

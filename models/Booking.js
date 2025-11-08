@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
-import Customer from "./Customer.js";
 
-const saleSchema = new mongoose.Schema(
+const bookingSchema = new mongoose.Schema(
   {
     booking_id: {
       type: String,
@@ -42,4 +41,4 @@ const saleSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-export default mongoose.model("Sale", saleSchema);
+export default mongoose.model("Sale", bookingSchema);
