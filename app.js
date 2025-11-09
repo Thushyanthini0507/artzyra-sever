@@ -1,41 +1,63 @@
 import cors from "cors";
 import express from "express";
+import dotenv from "dotenv";
 import connectDB from "./config/db.js";
-// Import routes
+import { errorHandler } from "./middleware/errorHandler.js";
 
-// Customer routes
+// Import routes
 import customerRoute from "./routes/customerRoutes.js";
 import artistRoute from "./routes/artistRoutes.js";
 import bookingRoute from "./routes/bookingRoutes.js";
 import userRoute from "./routes/authRoutes.js";
-import paymentRouter from "./routes/paymentRoutes .js";
-import reviewRouter from "./routes/reviewRoutes .js";
+import paymentRouter from "./routes/paymentRoutes.js";
+import reviewRouter from "./routes/reviewRoutes.js";
 import ServiceRouter from "./routes/serviceRoutes.js";
 
-// Initialized express
+// Load environment variables
+dotenv.config();
+
+// Initialize express
 const app = express();
 
-// Middleware added
-app.use(express.json());
-app.use(cors());
-
-// Test if the server is working or not.
-app.get("/", (req, res) => {
-  res.send("Welcome to Mini pos API");
-});
-
-// Mongo DB connected
+// Connect to database
 connectDB();
 
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+
+// Health check route
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "Welcome to Artzyra API",
+    version: "1.0.0",
+  });
+});
+
+// API routes
 app.use("/api/customers", customerRoute);
-app.use("/api/reviews", reviewRouter  );
 app.use("/api/artists", artistRoute);
 app.use("/api/bookings", bookingRoute);
 app.use("/api/users", userRoute);
-app.use("/api/payment", paymentRouter);
-app.use("/api/service",ServiceRouter)
+app.use("/api/payments", paymentRouter);
+app.use("/api/reviews", reviewRouter);
+app.use("/api/services", ServiceRouter);
 
-const PORT = process.env.PORT;
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+  });
+});
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
+
+// Start server
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server is running in http://localhost:${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
