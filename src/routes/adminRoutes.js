@@ -1,41 +1,25 @@
 import express from "express";
+const router = express.Router();
 import {
+  approveUser,
+  getAllUsers,
+  getUserById,
+  getAllBookings,
   getDashboardStats,
-  getSystemStats,
-  approveArtist,
-  rejectArtist,
-  deleteReviewAdmin,
-  updateBookingStatus,
-  getPendingApprovals,
-  getAllUsersAdmin,
-  getRevenueAnalytics,
 } from "../controllers/adminController.js";
-import { verifyToken, verifyRole } from "../middleware/auth.js";
+import authenticate from "../middleware/authMiddleware.js";
+import restrictTo from "../middleware/roleMiddleware.js";
+import checkApproval from "../middleware/approvalMiddleware.js";
 
-const adminRouter = express.Router();
+// All admin routes require authentication and admin role
+router.use(authenticate);
+router.use(checkApproval);
+router.use(restrictTo("admin"));
 
-// All admin routes require authentication and Admin role
-adminRouter.use(verifyToken);
-adminRouter.use(verifyRole("Admin", "Super Admin"));
+router.post("/users/approve", approveUser);
+router.get("/users", getAllUsers);
+router.get("/users/:role/:userId", getUserById);
+router.get("/bookings", getAllBookings);
+router.get("/dashboard/stats", getDashboardStats);
 
-// Dashboard routes
-adminRouter.get("/dashboard", getDashboardStats);
-adminRouter.get("/stats", getSystemStats);
-adminRouter.get("/analytics/revenue", getRevenueAnalytics);
-
-// User management
-adminRouter.get("/users", getAllUsersAdmin);
-
-// Artist management
-adminRouter.get("/approvals", getPendingApprovals);
-adminRouter.put("/artists/:id/approve", approveArtist);
-adminRouter.put("/artists/:id/reject", rejectArtist);
-
-// Booking management
-adminRouter.put("/bookings/:id/status", updateBookingStatus);
-
-// Review management (remove inappropriate content)
-adminRouter.delete("/reviews/:id", deleteReviewAdmin);
-
-export default adminRouter;
-
+export default router;

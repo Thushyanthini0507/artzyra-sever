@@ -1,32 +1,29 @@
 import express from "express";
+const router = express.Router();
 import {
   createPayment,
-  deletePayment,
-  getAllPayment,
   getPaymentById,
-  updatePayment,
+  getPayments,
+  refundPaymentRequest,
 } from "../controllers/paymentController.js";
-import { verifyToken, verifyRole } from "../middleware/auth.js";
-
-const PaymentRouter = express.Router();
+import authenticate from "../middleware/authMiddleware.js";
+import restrictTo from "../middleware/roleMiddleware.js";
+import checkApproval from "../middleware/approvalMiddleware.js";
 
 // All payment routes require authentication
-// Admins can manage all payments
-// Customers can view their own payments
+router.use(authenticate);
+router.use(checkApproval);
 
-// Get all payments - Admin only
-PaymentRouter.get("/", verifyToken, verifyRole("Admin", "Super Admin"), getAllPayment);
+// Create payment (customer only)
+router.post("/", restrictTo("customer"), createPayment);
 
-// Get payment by ID - Admin and Customer (own payments)
-PaymentRouter.get("/:id", verifyToken, verifyRole("Admin", "Super Admin", "Customer"), getPaymentById);
+// Get payments (customer, artist, admin)
+router.get("/", getPayments);
 
-// Create payment - Admin and Customer
-PaymentRouter.post("/", verifyToken, verifyRole("Admin", "Super Admin", "Customer"), createPayment);
+// Get payment by ID
+router.get("/:paymentId", getPaymentById);
 
-// Update payment - Admin only
-PaymentRouter.put("/:id", verifyToken, verifyRole("Admin", "Super Admin"), updatePayment);
+// Refund payment (admin only)
+router.post("/:paymentId/refund", restrictTo("admin"), refundPaymentRequest);
 
-// Delete payment - Admin only
-PaymentRouter.delete("/:id", verifyToken, verifyRole("Admin", "Super Admin"), deletePayment);
-
-export default PaymentRouter;
+export default router;

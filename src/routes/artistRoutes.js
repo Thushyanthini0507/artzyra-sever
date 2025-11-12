@@ -1,60 +1,29 @@
 import express from "express";
+const router = express.Router();
 import {
-  createArtist,
-  deleteArtist,
-  getAllArtist,
-  getArtistById,
-  updateArtist,
+  getProfile,
+  updateProfile,
+  getBookings,
+  acceptBooking,
+  rejectBooking,
+  checkAvailability,
+  getReviews,
 } from "../controllers/artistController.js";
-import {
-  registerArtist,
-  loginArtist,
-  logoutArtist,
-  getMeArtist,
-  updateArtistPassword,
-} from "../controllers/artistAuthController.js";
-import { verifyToken, verifyRole } from "../middleware/auth.js";
+import authenticate from "../middleware/authMiddleware.js";
+import restrictTo from "../middleware/roleMiddleware.js";
+import checkApproval from "../middleware/approvalMiddleware.js";
 
-const ArtistRouter = express.Router();
+// All artist routes require authentication and artist role
+router.use(authenticate);
+router.use(checkApproval);
+router.use(restrictTo("artist"));
 
-// Public routes - Authentication
-ArtistRouter.post("/register", registerArtist);
-ArtistRouter.post("/login", loginArtist);
+router.get("/profile", getProfile);
+router.put("/profile", updateProfile);
+router.get("/bookings", getBookings);
+router.put("/bookings/:bookingId/accept", acceptBooking);
+router.put("/bookings/:bookingId/reject", rejectBooking);
+router.get("/availability", checkAvailability);
+router.get("/reviews", getReviews);
 
-// Protected routes - Artist profile management
-ArtistRouter.post("/logout", verifyToken, verifyRole("Artist"), logoutArtist);
-ArtistRouter.get("/me", verifyToken, verifyRole("Artist"), getMeArtist);
-ArtistRouter.put(
-  "/updatepassword",
-  verifyToken,
-  verifyRole("Artist"),
-  updateArtistPassword
-);
-
-// Public route - Get all artists (for browsing)
-ArtistRouter.get("/", getAllArtist);
-
-// Public route - Get artist by ID (for viewing profile)
-ArtistRouter.get("/:id", getArtistById);
-
-// Admin only routes - Artist management
-ArtistRouter.post(
-  "/",
-  verifyToken,
-  verifyRole("Admin", "Super Admin"),
-  createArtist
-);
-ArtistRouter.put(
-  "/:id",
-  verifyToken,
-  verifyRole("Admin", "Super Admin", "Artist"),
-  updateArtist
-);
-ArtistRouter.delete(
-  "/:id",
-  verifyToken,
-  verifyRole("Admin", "Super Admin"),
-  deleteArtist
-);
-
-export default ArtistRouter;
+export default router;

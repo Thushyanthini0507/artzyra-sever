@@ -1,33 +1,35 @@
 import express from "express";
+const router = express.Router();
 import {
   createReview,
-  deleteReview,
-  getAllReviews,
+  getReviewsByArtist,
   getReviewById,
   updateReview,
+  deleteReview,
 } from "../controllers/reviewController.js";
-import { verifyToken, verifyRole } from "../middleware/auth.js";
+import authenticate from "../middleware/authMiddleware.js";
+import restrictTo from "../middleware/roleMiddleware.js";
+import checkApproval from "../middleware/approvalMiddleware.js";
 
-const reviewRouter = express.Router();
+// Public routes
+router.get("/artist/:artistId", getReviewsByArtist);
+router.get("/:reviewId", getReviewById);
 
-// All review routes require authentication
-// Customers can create reviews
-// Artists can view their reviews
-// Admins can manage all reviews
+// Protected routes
+router.post(
+  "/",
+  authenticate,
+  checkApproval,
+  restrictTo("customer"),
+  createReview
+);
+router.put(
+  "/:reviewId",
+  authenticate,
+  checkApproval,
+  restrictTo("customer"),
+  updateReview
+);
+router.delete("/:reviewId", authenticate, checkApproval, deleteReview);
 
-// Get all reviews - Public (can be viewed by anyone, but protected for consistency)
-reviewRouter.get("/", verifyToken, verifyRole("Admin", "Super Admin", "Customer", "Artist"), getAllReviews);
-
-// Get review by ID - Public (can be viewed by anyone)
-reviewRouter.get("/:id", verifyToken, verifyRole("Admin", "Super Admin", "Customer", "Artist"), getReviewById);
-
-// Create review - Customer and Admin
-reviewRouter.post("/", verifyToken, verifyRole("Customer", "Admin", "Super Admin"), createReview);
-
-// Update review - Customer (own reviews) and Admin
-reviewRouter.put("/:id", verifyToken, verifyRole("Customer", "Admin", "Super Admin"), updateReview);
-
-// Delete review - Customer (own reviews) and Admin
-reviewRouter.delete("/:id", verifyToken, verifyRole("Customer", "Admin", "Super Admin"), deleteReview);
-
-export default reviewRouter;
+export default router;

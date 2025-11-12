@@ -1,34 +1,24 @@
 import express from "express";
+const router = express.Router();
 import {
-  register,
+  registerAdmin,
+  registerArtist,
+  registerCustomer,
   login,
-  logout,
   getMe,
-  getAllUsers,
-  getUserById,
-  updateUser,
-  deleteUser,
-  updatePassword,
+  logout,
 } from "../controllers/authController.js";
-import { verifyToken, verifyRole } from "../middleware/auth.js";
-
-const userRouter = express.Router();
+import authenticate from "../middleware/authMiddleware.js";
+import checkApproval from "../middleware/approvalMiddleware.js";
 
 // Public routes
-userRouter.post("/login", login);
-userRouter.post("/register", register); // Public for first user, protected for admins (handled in controller)
+router.post("/register/admin", registerAdmin);
+router.post("/register/artist", registerArtist);
+router.post("/register/customer", registerCustomer);
+router.post("/login", login);
 
-// Protected routes (require authentication - Admin only)
-userRouter.post("/logout", verifyToken, verifyRole("Admin", "Super Admin"), logout);
-userRouter.get("/me", verifyToken, verifyRole("Admin", "Super Admin"), getMe);
-userRouter.put("/updatepassword", verifyToken, verifyRole("Admin", "Super Admin"), updatePassword);
+// Protected routes
+router.get("/me", authenticate, checkApproval, getMe);
+router.post("/logout", authenticate, checkApproval, logout);
 
-// Admin only routes - User management
-userRouter.get("/", verifyToken, verifyRole("Admin", "Super Admin"), getAllUsers);
-userRouter.get("/:id", verifyToken, verifyRole("Admin", "Super Admin"), getUserById);
-userRouter.put("/:id", verifyToken, verifyRole("Admin", "Super Admin"), updateUser);
-
-// Super Admin only routes
-userRouter.delete("/:id", verifyToken, verifyRole("Super Admin"), deleteUser);
-
-export default userRouter;
+export default router;

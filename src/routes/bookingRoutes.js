@@ -1,38 +1,29 @@
 import express from "express";
+const router = express.Router();
 import {
   createBooking,
-  deleteBooking,
-  getAllBookings,
   getBookingById,
-  updateBooking,
+  cancelBooking,
+  completeBooking,
 } from "../controllers/bookingController.js";
-import { verifyToken, verifyRole } from "../middleware/auth.js";
-
-const bookingRouter = express.Router();
+import authenticate from "../middleware/authMiddleware.js";
+import restrictTo from "../middleware/roleMiddleware.js";
+import checkApproval from "../middleware/approvalMiddleware.js";
 
 // All booking routes require authentication
-// Admins can manage all bookings
-// Customers can create and view their own bookings
-// Artists can view and update their own bookings
+router.use(authenticate);
+router.use(checkApproval);
 
-// Get all bookings - Admin only
-bookingRouter.get(
-  "/",
-  verifyToken,
-  verifyRole("Admin", "Super Admin", "Customer", "Artist"),
-  getAllBookings
-);
+// Create booking (customer only)
+router.post("/", restrictTo("customer"), createBooking);
 
-// Get booking by ID - Admin, Customer (own bookings), Artist (own bookings)
-bookingRouter.get("/:id", verifyToken, verifyRole("Admin", "Super Admin", "Artist"), getBookingById);
+// Get booking by ID (customer, artist, admin)
+router.get("/:bookingId", getBookingById);
 
-// Create booking - Customer and Admin
-bookingRouter.post("/", verifyToken, verifyRole("Customer", "Admin", "Super Admin"), createBooking);
+// Cancel booking (customer only)
+router.put("/:bookingId/cancel", restrictTo("customer"), cancelBooking);
 
-// Update booking - Admin, Customer (own bookings), Artist (own bookings)
-bookingRouter.put("/:id", verifyToken, verifyRole("Admin", "Super Admin", "Customer", "Artist"), updateBooking);
+// Complete booking (artist only)
+router.put("/:bookingId/complete", restrictTo("artist"), completeBooking);
 
-// Delete booking - Admin only
-bookingRouter.delete("/:id", verifyToken, verifyRole("Admin", "Super Admin"), deleteBooking);
-
-export default bookingRouter;
+export default router;
