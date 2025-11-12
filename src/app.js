@@ -1,48 +1,52 @@
-import cors from "cors";
+import "dotenv/config";
 import express from "express";
-import dotenv from "dotenv";
+import cors from "cors";
 import connectDB from "./config/db.js";
-import { errorHandler } from "./middleware/errorHandler.js";
+import errorHandler from "./middleware/errorMiddleware.js";
 
 // Import routes
-import customerRoute from "./routes/customerRoutes.js";
-import artistRoute from "./routes/artistRoutes.js";
-import bookingRoute from "./routes/bookingRoutes.js";
-import userRoute from "./routes/authRoutes.js";
-import adminRoute from "./routes/adminRoutes.js";
-import paymentRouter from "./routes/paymentRoutes.js";
-import reviewRouter from "./routes/reviewRoutes.js";
-import ServiceRouter from "./routes/serviceRoutes.js";
-
-// Load environment variables
-dotenv.config();
-
-// Initialize express
-const app = express();
+import authRoutes from "./routes/authRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import artistRoutes from "./routes/artistRoutes.js";
+import customerRoutes from "./routes/customerRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import searchRoutes from "./routes/searchRoutes.js";
 
 // Connect to database
 connectDB();
 
+// Initialize Express app
+const app = express();
+
 // Middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
 
 // Health check route
-app.get("/", (req, res) => {
-  res.send("Welcome to Artzyra API");
-  // console.log("Welcome to Artzyra API");
+app.get("/health", (req, res) => {
+  res.json({
+    success: true,
+    message: "Server is running",
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// API routes
-app.use("/api/customers", customerRoute);
-app.use("/api/artists", artistRoute);
-app.use("/api/bookings", bookingRoute);
-app.use("/api/users", userRoute);
-app.use("/api/admin", adminRoute);
-app.use("/api/payments", paymentRouter);
-app.use("/api/reviews", reviewRouter);
-app.use("/api/services", ServiceRouter);
+// API Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/artist", artistRoutes);
+app.use("/api/customer", customerRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/notifications", notificationRoutes);
+// app.use('/api/search', searchRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -52,11 +56,14 @@ app.use((req, res) => {
   });
 });
 
-// Error handling middleware (must be last)
+// Error handler middleware (must be last)
 app.use(errorHandler);
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
 });
+
+export default app;

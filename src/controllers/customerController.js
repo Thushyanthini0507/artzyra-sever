@@ -1,89 +1,126 @@
 import Customer from "../models/Customer.js";
-import { asyncHandler } from "../middleware/errorHandler.js";
-import { NotFoundError, UnauthorizedError } from "../utils/errors.js";
+import Booking from "../models/Booking.js";
+import Review from "../models/Review.js";
+import Artist from "../models/Artist.js";
 
-// Get all customers
-export const getAllCustomers = asyncHandler(async (req, res) => {
-  const customers = await Customer.find();
+// Get customer profile
+const getProfile = async (req, res, next) => {
+  try {
+    const customer = await Customer.findById(req.userId).select("-password");
 
-  res.status(200).json({
-    success: true,
-    length: customers.length,
-    customers,
-  });
-});
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
 
-// Get a customer by Id
-export const getCustomerById = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const customer = await Customer.findById(id);
-
-  if (!customer) {
-    throw new NotFoundError("Customer");
+    res.json({
+      success: true,
+      data: {
+        customer,
+      },
+    });
+  } catch (error) {
+    next(error);
   }
+};
 
-  // Check if customer is accessing their own data or is admin
-  if (req.user.role === "Customer" && req.user._id.toString() !== id) {
-    throw new UnauthorizedError("Not authorized to access this customer's data");
+// Update customer profile
+const updateProfile = async (req, res, next) => {
+  try {
+    const { name, phone, address, profileImage } = req.body;
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (phone) updateData.phone = phone;
+    if (address) updateData.address = address;
+    if (profileImage) updateData.profileImage = profileImage;
+
+    const customer = await Customer.findByIdAndUpdate(req.userId, updateData, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
+
+    res.json({
+      success: true,
+      data: {
+        customer,
+      },
+      message: "Profile updated successfully",
+    });
+  } catch (error) {
+    next(error);
   }
+};
 
-  res.status(200).json({
-    success: true,
-    customer,
-  });
-});
+// Get customer bookings
+const getBookings = async (req, res, next) => {
+  try {
+    const { status, page = 1, limit = 10 } = req.query;
 
-// Create a customer
-export const createCustomer = asyncHandler(async (req, res) => {
-  const customerData = req.body;
-  const newCustomer = new Customer(customerData);
-  const savedCustomer = await newCustomer.save();
+    const query = { customer: req.userId };
+    if (status) {
+      query.status = status;
+    }
 
-  res.status(201).json({
-    success: true,
-    message: "Customer created successfully",
-    customer: savedCustomer,
-  });
-});
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const bookings = await Booking.find(query)
+      .populate("artist", "name email phone profileImage rating")
+      .populate("category", "name")
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ bookingDate: -1 });
 
-// Update a customer by Id
-export const updateCustomer = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  
-  // Check if customer is updating their own data or is admin
-  if (req.user.role === "Customer" && req.user._id.toString() !== id) {
-    throw new UnauthorizedError("Not authorized to update this customer's data");
+    const total = await Booking.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: {
+        bookings,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit)),
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
   }
+};
 
-  const updateData = req.body;
-  const customer = await Customer.findByIdAndUpdate(id, updateData, {
-    new: true,
-    runValidators: true,
-  });
+// Get customer reviews
+const getReviews = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
 
-  if (!customer) {
-    throw new NotFoundError("Customer");
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const reviews = await Review.find({ customer: req.userId })
+      .populate("artist", "name profileImage")
+      .populate("booking", "bookingDate")
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await Review.countDocuments({ customer: req.userId });
+
+    res.json({
+      success: true,
+      data: {
+        reviews,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit)),
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
   }
+};
 
-  res.status(200).json({
-    success: true,
-    message: "Customer updated successfully",
-    customer,
-  });
-});
-
-// Delete a customer by Id
-export const deleteCustomer = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const customer = await Customer.findByIdAndDelete(id);
-
-  if (!customer) {
-    throw new NotFoundError("Customer");
-  }
-
-  res.status(200).json({
-    success: true,
-    message: "Customer removed successfully",
-    deletedCustomer: customer,
-  });
-});
+export { getProfile, updateProfile, getBookings, getReviews };
