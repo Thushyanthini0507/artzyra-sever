@@ -12,10 +12,7 @@ import Review from "../models/Review.js";
 import Notification from "../models/Notification.js";
 import { sendApprovalEmail } from "../utils/emailService.js";
 import { createNotification } from "../utils/helpers.js";
-import {
-  NotFoundError,
-  BadRequestError,
-} from "../utils/errors.js";
+import { NotFoundError, BadRequestError } from "../utils/errors.js";
 import { asyncHandler } from "../middleware/authMiddleware.js";
 import { formatPaginationResponse } from "../utils/paginate.js";
 
@@ -30,9 +27,6 @@ export const approveUser = asyncHandler(async (req, res) => {
   if (role === "artist") {
     User = Artist;
     userModel = "Artist";
-  } else if (role === "customer") {
-    User = Customer;
-    userModel = "Customer";
   } else {
     throw new BadRequestError("Invalid role. Must be artist or customer");
   }

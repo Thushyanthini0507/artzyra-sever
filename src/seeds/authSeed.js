@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
-import User from "../models/User.js";
 import Customer from "../models/Customer.js";
-import Artist from "../models/artist.js";
+import Artist from "../models/Artist.js";
 
 // Load environment variables
 dotenv.config();
@@ -12,18 +11,6 @@ dotenv.config();
  * Authorization Seed Script
  * Seeds default roles and users into MongoDB
  */
-
-// Seed data
-const roles = ["Admin", "Customer", "Artist"]; // Conceptual roles
-
-const adminUser = {
-  admin_id: "ADMIN001",
-  name: "Super Admin",
-  email: "admin@example.com",
-  password: "admin123",
-  role: "Super Admin",
-  contact_number: "+1234567890",
-};
 
 const customers = [
   {
@@ -74,31 +61,6 @@ const artists = [
 ];
 
 /**
- * Seed Admin User
- */
-const seedAdminUser = async () => {
-  try {
-    // Check if admin user already exists
-    const existingAdmin = await User.findOne({
-      email: adminUser.email,
-    });
-
-    if (existingAdmin) {
-      console.log("✓ Admin user already exists, skipping...");
-      return;
-    }
-
-    // Create admin user (password will be hashed by pre-save hook)
-    const user = await User.create(adminUser);
-
-    console.log(`✓ Admin user created successfully: ${user.name} (${user.email})`);
-  } catch (error) {
-    console.error("✗ Error seeding admin user:", error.message);
-    throw error;
-  }
-};
-
-/**
  * Seed Customers
  */
 const seedCustomers = async () => {
@@ -110,14 +72,18 @@ const seedCustomers = async () => {
       });
 
       if (existingCustomer) {
-        console.log(`✓ Customer already exists, skipping: ${customerData.name}`);
+        console.log(
+          `✓ Customer already exists, skipping: ${customerData.name}`
+        );
         continue;
       }
 
       // Create customer (password will be hashed by pre-save hook)
       const customer = await Customer.create(customerData);
 
-      console.log(`✓ Customer created successfully: ${customer.name} (${customer.email})`);
+      console.log(
+        `✓ Customer created successfully: ${customer.name} (${customer.email})`
+      );
     }
   } catch (error) {
     console.error("✗ Error seeding customers:", error.message);
@@ -144,7 +110,9 @@ const seedArtists = async () => {
       // Create artist (password will be hashed by pre-save hook)
       const artist = await Artist.create(artistData);
 
-      console.log(`✓ Artist created successfully: ${artist.name} (${artist.email})`);
+      console.log(
+        `✓ Artist created successfully: ${artist.name} (${artist.email})`
+      );
     }
   } catch (error) {
     console.error("✗ Error seeding artists:", error.message);
@@ -163,14 +131,6 @@ const seedAuth = async () => {
     console.log("📡 Connecting to MongoDB...");
     await mongoose.connect(process.env.MONGO_URI);
     console.log("✓ MongoDB connected successfully\n");
-
-    // Seed roles (conceptual - no Role model exists)
-    console.log("📋 Roles: Admin, Customer, Artist (conceptual)\n");
-
-    // Seed admin user
-    console.log("👤 Seeding Admin User...");
-    await seedAdminUser();
-    console.log("");
 
     // Seed customers
     console.log("👥 Seeding Customers...");
@@ -202,4 +162,3 @@ if (process.argv[1] === __filename) {
 }
 
 export default seedAuth;
-

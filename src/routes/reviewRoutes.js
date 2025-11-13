@@ -11,8 +11,8 @@ import {
   updateReview,
   deleteReview,
 } from "../controllers/reviewController.js";
-import { authenticate, checkApproval, asyncHandler } from "../middleware/authMiddleware.js";
-import { customerOnly } from "../middleware/roleMiddleware.js";
+import { verifyToken, checkApproval } from "../middleware/authMiddleware.js";
+import { verifyRole } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
@@ -23,35 +23,26 @@ router.get("/:reviewId", getReviewById);
 // Protected routes - Create and manage reviews
 router.post(
   "/",
-  authenticate,
+  verifyToken,
+  verifyRole("customer"),
   checkApproval,
-  customerOnly,
   createReview
 );
 
 router.put(
   "/:reviewId",
-  authenticate,
+  verifyToken,
+  verifyRole("customer"),
   checkApproval,
-  customerOnly,
   updateReview
 );
 
 // Delete review (customer or admin)
 router.delete(
   "/:reviewId",
-  authenticate,
+  verifyToken,
+  verifyRole(["customer", "admin"]),
   checkApproval,
-  asyncHandler(async (req, res, next) => {
-    // Allow customer or admin to delete
-    if (req.userRole !== "customer" && req.userRole !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied",
-      });
-    }
-    next();
-  }),
   deleteReview
 );
 

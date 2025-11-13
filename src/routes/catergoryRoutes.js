@@ -12,8 +12,8 @@ import {
   deleteCategory,
   getArtistsByCategory,
 } from "../controllers/categoryController.js";
-import { authenticate, checkApproval } from "../middleware/authMiddleware.js";
-import { adminOnly } from "../middleware/roleMiddleware.js";
+import { verifyToken, checkApproval } from "../middleware/authMiddleware.js";
+import { verifyRole } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
@@ -23,8 +23,8 @@ router.get("/:categoryId", getCategoryById);
 router.get("/:categoryId/artists", getArtistsByCategory);
 
 // Admin only routes - Category management
-router.post("/", authenticate, checkApproval, adminOnly, createCategory);
-router.put("/:categoryId", authenticate, checkApproval, adminOnly, updateCategory);
-router.delete("/:categoryId", authenticate, checkApproval, adminOnly, deleteCategory);
+router.post("/", verifyToken, verifyRole("admin"), checkApproval, createCategory);
+router.put("/:categoryId", verifyToken, verifyRole("admin"), checkApproval, updateCategory);
+router.delete("/:categoryId", verifyToken, verifyRole("admin"), checkApproval, deleteCategory);
 
 export default router;

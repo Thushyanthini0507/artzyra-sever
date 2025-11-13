@@ -9,25 +9,25 @@ import {
   cancelBooking,
   completeBooking,
 } from "../controllers/bookingController.js";
-import { authenticate, checkApproval } from "../middleware/authMiddleware.js";
-import { customerOnly, artistOnly } from "../middleware/roleMiddleware.js";
+import { verifyToken, checkApproval } from "../middleware/authMiddleware.js";
+import { verifyRole } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
 // All booking routes require authentication
-router.use(authenticate);
+router.use(verifyToken);
 router.use(checkApproval);
 
 // Create booking (customer only)
-router.post("/", customerOnly, createBooking);
+router.post("/", verifyRole("customer"), createBooking);
 
 // Get booking by ID (customer, artist, admin)
-router.get("/:bookingId", getBookingById);
+router.get("/:bookingId", verifyRole(["customer", "artist", "admin"]), getBookingById);
 
 // Cancel booking (customer only)
-router.put("/:bookingId/cancel", customerOnly, cancelBooking);
+router.put("/:bookingId/cancel", verifyRole("customer"), cancelBooking);
 
 // Complete booking (artist only)
-router.put("/:bookingId/complete", artistOnly, completeBooking);
+router.put("/:bookingId/complete", verifyRole("artist"), completeBooking);
 
 export default router;

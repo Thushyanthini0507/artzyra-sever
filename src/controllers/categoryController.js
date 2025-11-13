@@ -91,7 +91,6 @@ export const createCategory = asyncHandler(async (req, res) => {
     },
   });
 });
-
 /**
  * Update category (Admin only)
  * @route PUT /api/categories/:categoryId
@@ -204,3 +203,4 @@ export const getArtistsByCategory = asyncHandler(async (req, res) => {
     pagination: response.pagination,
   });
 });
+

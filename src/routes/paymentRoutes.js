@@ -9,25 +9,25 @@ import {
   getPayments,
   refundPaymentRequest,
 } from "../controllers/paymentController.js";
-import { authenticate, checkApproval } from "../middleware/authMiddleware.js";
-import { customerOnly, adminOnly } from "../middleware/roleMiddleware.js";
+import { verifyToken, checkApproval } from "../middleware/authMiddleware.js";
+import { verifyRole } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
 // All payment routes require authentication
-router.use(authenticate);
+router.use(verifyToken);
 router.use(checkApproval);
 
 // Create payment (customer only)
-router.post("/", customerOnly, createPayment);
+router.post("/", verifyRole("customer"), createPayment);
 
 // Get payments (customer, artist, admin)
-router.get("/", getPayments);
+router.get("/", verifyRole(["customer", "artist", "admin"]), getPayments);
 
 // Get payment by ID
-router.get("/:paymentId", getPaymentById);
+router.get("/:paymentId", verifyRole(["customer", "artist", "admin"]), getPaymentById);
 
 // Refund payment (admin only)
-router.post("/:paymentId/refund", adminOnly, refundPaymentRequest);
+router.post("/:paymentId/refund", verifyRole("admin"), refundPaymentRequest);
 
 export default router;

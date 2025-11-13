@@ -1,8 +1,8 @@
 /**
  * Authentication Middleware
- * Verifies JWT token and attaches user to request object
+ * Provides JWT verification and approval checks
  */
-import { verifyToken } from "../config/jwt.js";
+import { verifyToken as verifyJwtToken } from "../config/jwt.js";
 import Admin from "../models/Admin.js";
 import Artist from "../models/Artist.js";
 import Customer from "../models/Customer.js";
@@ -18,10 +18,10 @@ export const asyncHandler = (fn) => {
 };
 
 /**
- * Main authentication middleware
+ * JWT verification middleware
  * Verifies JWT token and loads user based on role
  */
-export const authenticate = asyncHandler(async (req, res, next) => {
+export const verifyToken = asyncHandler(async (req, res, next) => {
   let token;
 
   // Extract token from Authorization header
@@ -38,7 +38,7 @@ export const authenticate = asyncHandler(async (req, res, next) => {
 
   try {
     // Verify token
-    const decoded = verifyToken(token);
+    const decoded = verifyJwtToken(token);
 
     // Find user based on role
     let user = null;
@@ -85,6 +85,9 @@ export const authenticate = asyncHandler(async (req, res, next) => {
     throw error;
   }
 });
+
+// Backward compatibility export (to be deprecated)
+export const authenticate = verifyToken;
 
 /**
  * Check if user account is approved

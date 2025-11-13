@@ -7,11 +7,14 @@ import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import errorHandler from "./middleware/errorMiddleware.js";
+import { apiRateLimiter } from "./middleware/rateLimiter.js";
 
 // Import routes
+import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import artistRoutes from "./routes/artistRoutes.js";
+import artistPublicRoutes from "./routes/artistPublicRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import categoryRoutes from "./routes/catergoryRoutes.js";
@@ -29,6 +32,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/api", apiRateLimiter);
 
 // Health check route
 app.get("/health", (req, res) => {
@@ -40,7 +44,9 @@ app.get("/health", (req, res) => {
 });
 
 // API Routes
-app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes); // Registration, login, profile
+app.use("/api/auth", authRoutes); // Legacy authentication endpoints
+app.use("/api/artists", artistPublicRoutes); // Public artist browsing
 app.use("/api/admin", adminRoutes);
 app.use("/api/artist", artistRoutes);
 app.use("/api/customer", customerRoutes);

@@ -9,15 +9,15 @@ import {
   getBookings,
   getReviews,
 } from "../controllers/customerController.js";
-import { authenticate, checkApproval } from "../middleware/authMiddleware.js";
-import { customerOnly } from "../middleware/roleMiddleware.js";
+import { verifyToken, checkApproval } from "../middleware/authMiddleware.js";
+import { verifyRole } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
 // All customer routes require authentication, approval, and customer role
-router.use(authenticate);
+router.use(verifyToken);
 router.use(checkApproval);
-router.use(customerOnly);
+router.use(verifyRole("customer"));
 
 router.get("/profile", getProfile);
 router.put("/profile", updateProfile);

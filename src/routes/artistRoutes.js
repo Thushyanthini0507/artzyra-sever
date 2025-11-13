@@ -12,15 +12,15 @@ import {
   checkAvailability,
   getReviews,
 } from "../controllers/artistController.js";
-import { authenticate, checkApproval } from "../middleware/authMiddleware.js";
-import { artistOnly } from "../middleware/roleMiddleware.js";
+import { verifyToken, checkApproval } from "../middleware/authMiddleware.js";
+import { verifyRole } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
 // All artist routes require authentication, approval, and artist role
-router.use(authenticate);
+router.use(verifyToken);
 router.use(checkApproval);
-router.use(artistOnly);
+router.use(verifyRole("artist"));
 
 router.get("/profile", getProfile);
 router.put("/profile", updateProfile);

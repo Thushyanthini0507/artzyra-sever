@@ -14,10 +14,12 @@ dotenv.config();
  * Admin user data
  */
 const adminData = {
-  name: "Admin",
-  email: "admin12@gmail.com",
-  password: "admin123",
+  name: process.env.ADMIN_NAME || "Platform Admin",
+  email: (process.env.ADMIN_EMAIL || "admin@artzyra.com").toLowerCase().trim(),
+  password: process.env.ADMIN_PASSWORD || "SecureAdmin123!",
   role: "admin",
+  isApproved: true,
+  isActive: true,
 };
 
 /**
@@ -32,24 +34,25 @@ const seedAdmin = async () => {
     await connectDB();
     console.log("✓ MongoDB connected successfully\n");
 
-    // Check if admin already exists
-    const existingAdmin = await Admin.findOne({ email: adminData.email });
+    // Remove existing admins
+    const removedAdmins = await Admin.deleteMany({});
+    console.log(
+      `🧹 Removed ${removedAdmins.deletedCount} existing admin user(s)\n`
+    );
 
-    if (existingAdmin) {
-      console.log(`✓ Admin user already exists: ${existingAdmin.name} (${existingAdmin.email})`);
-      console.log("   Skipping admin creation...\n");
-    } else {
-      // Create admin user (password will be hashed by pre-save hook)
-      const admin = await Admin.create(adminData);
+    // Create admin user (password will be hashed by pre-save hook)
+    const admin = await Admin.create(adminData);
 
-      console.log(`✓ Admin user created successfully:`);
-      console.log(`   Name: ${admin.name}`);
-      console.log(`   Email: ${admin.email}`);
-      console.log(`   Role: ${admin.role}`);
-      console.log(`   ID: ${admin._id}\n`);
-    }
+    console.log(`✓ Admin user created successfully:`);
+    console.log(`   Name: ${admin.name}`);
+    console.log(`   Email: ${admin.email}`);
+    console.log(`   Role: ${admin.role}`);
+    console.log(`   ID: ${admin._id}\n`);
 
     console.log("✅ Admin seed completed successfully!");
+    console.log(`\n📝 Admin credentials:`);
+    console.log(`   Email: ${adminData.email}`);
+    console.log(`   Password: ${adminData.password}\n`);
   } catch (error) {
     console.error("❌ Error during admin seeding:", error);
     process.exit(1);
@@ -65,4 +68,3 @@ const seedAdmin = async () => {
 seedAdmin();
 
 export default seedAdmin;
-
