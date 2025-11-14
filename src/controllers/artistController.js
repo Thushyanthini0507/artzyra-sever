@@ -133,9 +133,7 @@ export const acceptBooking = asyncHandler(async (req, res) => {
 
   // Check authorization
   if (booking.artist._id.toString() !== req.userId.toString()) {
-    throw new ForbiddenError(
-      "You are not authorized to accept this booking"
-    );
+    throw new ForbiddenError("You are not authorized to accept this booking");
   }
 
   if (booking.status !== "pending") {
@@ -184,9 +182,7 @@ export const rejectBooking = asyncHandler(async (req, res) => {
 
   // Check authorization
   if (booking.artist._id.toString() !== req.userId.toString()) {
-    throw new ForbiddenError(
-      "You are not authorized to reject this booking"
-    );
+    throw new ForbiddenError("You are not authorized to reject this booking");
   }
 
   if (booking.status !== "pending") {
@@ -225,9 +221,7 @@ export const checkAvailability = asyncHandler(async (req, res) => {
   const { date, startTime, endTime } = req.query;
 
   if (!date || !startTime || !endTime) {
-    throw new BadRequestError(
-      "Please provide date, startTime, and endTime"
-    );
+    throw new BadRequestError("Please provide date, startTime, and endTime");
   }
 
   const artist = await Artist.findById(req.userId);
@@ -303,5 +297,72 @@ export const getReviews = asyncHandler(async (req, res) => {
     success: true,
     data: response.data,
     pagination: response.pagination,
+  });
+});
+
+/**
+ * Get all pending artists (admin only)
+ * @route GET /api/artists/pending
+ */
+export const getPendingArtists = asyncHandler(async (req, res) => {
+  const pendingArtists = await Artist.find({ isApproved: false })
+    .select("-password")
+    .populate("category", "name description");
+
+  res.json({
+    success: true,
+    message: "Pending artists retrieved successfully",
+    data: pendingArtists,
+  });
+});
+
+/**
+ * Approve artist (admin only)
+ * @route PUT /api/artists/approve/:id
+ */
+export const approveArtist = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const artist = await Artist.findById(id).select("-password");
+  if (!artist) {
+    throw new NotFoundError("Artist not found");
+  }
+
+  if (artist.isApproved) {
+    return res.json({
+      success: true,
+      message: "Artist is already approved",
+      data: artist,
+    });
+  }
+
+  artist.isApproved = true;
+  artist.isActive = true;
+  await artist.save();
+
+  res.json({
+    success: true,
+    message: "Artist approved successfully",
+    data: artist,
+  });
+});
+
+/**
+ * Reject artist (admin only)
+ * @route DELETE /api/artists/reject/:id
+ */
+export const rejectArtist = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const artist = await Artist.findById(id);
+  if (!artist) {
+    throw new NotFoundError("Artist not found");
+  }
+
+  await artist.deleteOne();
+
+  res.json({
+    success: true,
+    message: "Artist rejected and removed successfully",
   });
 });

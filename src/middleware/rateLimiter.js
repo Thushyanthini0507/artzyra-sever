@@ -15,16 +15,16 @@ const buildMessage = (message) => ({
 /**
  * Registration rate limiter
  * Limit to 5 registration attempts per hour per IP
- */
-export const registerRateLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5,
-  message: buildMessage(
-    "Too many registration attempts. Please try again after an hour."
-  ),
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+//  */
+// export const registerRateLimiter = rateLimit({
+//   windowMs: 60 * 60 * 1000, // 1 hour
+//   max: 5,
+//   message: buildMessage(
+//     "Too many registration attempts. Please try again after an hour."
+//   ),
+//   standardHeaders: true,
+//   legacyHeaders: false,
+// });
 
 /**
  * Authentication rate limiter
@@ -69,7 +69,7 @@ export const apiRateLimiter = rateLimit({
 });
 
 export default {
-  registerRateLimiter,
+  // registerRateLimiter,
   authRateLimiter,
   paymentRateLimiter,
   apiRateLimiter,

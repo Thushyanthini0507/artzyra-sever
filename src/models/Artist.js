@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../config/jwt.js";
+import Category from "./Category.js";
 
 const artistSchema = new mongoose.Schema(
   {
@@ -36,7 +37,7 @@ const artistSchema = new mongoose.Schema(
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
+      ref: Category,
     },
     skills: [
       {

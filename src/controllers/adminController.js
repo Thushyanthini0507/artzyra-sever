@@ -27,8 +27,13 @@ export const approveUser = asyncHandler(async (req, res) => {
   if (role === "artist") {
     User = Artist;
     userModel = "Artist";
+  } else if (role === "customer") {
+    User = Customer;
+    userModel = "Customer";
   } else {
-    throw new BadRequestError("Invalid role. Must be artist or customer");
+    throw new BadRequestError(
+      "Invalid role. Must be  artist, or customer"
+    );
   }
 
   const user = await User.findById(userId);
