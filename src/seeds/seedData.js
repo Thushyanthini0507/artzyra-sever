@@ -42,32 +42,39 @@ const seedData = async () => {
     const categories = await Category.insertMany([
       {
         name: "Photographer",
-        description: "Professional photographers for events, portraits, and commercial work",
-        image: "https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=400",
+        description:
+          "Professional photographers for events, portraits, and commercial work",
+        image:
+          "https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=400",
         isActive: true,
       },
       {
         name: "DJ",
         description: "Professional DJs for parties, weddings, and events",
-        image: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=400",
+        image:
+          "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=400",
         isActive: true,
       },
       {
         name: "Musician",
         description: "Talented musicians for live performances",
-        image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400",
+        image:
+          "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400",
         isActive: true,
       },
       {
         name: "Painter",
-        description: "Artists specializing in portraits, murals, and custom artwork",
-        image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400",
+        description:
+          "Artists specializing in portraits, murals, and custom artwork",
+        image:
+          "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400",
         isActive: true,
       },
       {
         name: "Dancer",
         description: "Professional dancers and choreographers",
-        image: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?w=400",
+        image:
+          "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?w=400",
         isActive: true,
       },
     ]);
@@ -234,7 +241,12 @@ const seedData = async () => {
         bio: "Professional photographer with 10+ years of experience in wedding and event photography. Specialized in capturing beautiful moments.",
         profileImage: "https://i.pravatar.cc/150?img=11",
         category: categories[0]._id, // Photographer
-        skills: ["Wedding Photography", "Event Photography", "Portrait Photography", "Photo Editing"],
+        skills: [
+          "Wedding Photography",
+          "Event Photography",
+          "Portrait Photography",
+          "Photo Editing",
+        ],
         hourlyRate: 150,
         availability: new Map([
           ["monday", { start: "09:00", end: "18:00", available: true }],
@@ -253,7 +265,12 @@ const seedData = async () => {
         bio: "Professional DJ with expertise in mixing music for weddings, parties, and corporate events. I bring the energy!",
         profileImage: "https://i.pravatar.cc/150?img=12",
         category: categories[1]._id, // DJ
-        skills: ["Music Mixing", "Sound Engineering", "MC Services", "Lighting"],
+        skills: [
+          "Music Mixing",
+          "Sound Engineering",
+          "MC Services",
+          "Lighting",
+        ],
         hourlyRate: 200,
         availability: new Map([
           ["friday", { start: "18:00", end: "02:00", available: true }],
@@ -270,7 +287,12 @@ const seedData = async () => {
         bio: "Talented guitarist specializing in acoustic and electric performances. Available for events, recordings, and lessons.",
         profileImage: "https://i.pravatar.cc/150?img=13",
         category: categories[2]._id, // Musician
-        skills: ["Acoustic Guitar", "Electric Guitar", "Music Composition", "Live Performance"],
+        skills: [
+          "Acoustic Guitar",
+          "Electric Guitar",
+          "Music Composition",
+          "Live Performance",
+        ],
         hourlyRate: 120,
         availability: new Map([
           ["monday", { start: "10:00", end: "20:00", available: true }],
@@ -289,7 +311,12 @@ const seedData = async () => {
         bio: "Professional painter creating beautiful portraits, murals, and custom artwork. Let's bring your vision to life!",
         profileImage: "https://i.pravatar.cc/150?img=14",
         category: categories[3]._id, // Painter
-        skills: ["Portrait Painting", "Mural Art", "Custom Artwork", "Digital Art"],
+        skills: [
+          "Portrait Painting",
+          "Mural Art",
+          "Custom Artwork",
+          "Digital Art",
+        ],
         hourlyRate: 100,
         availability: new Map([
           ["monday", { start: "09:00", end: "17:00", available: true }],
@@ -327,7 +354,11 @@ const seedData = async () => {
         bio: "Upcoming photographer looking to build my portfolio. Specialized in portrait and lifestyle photography.",
         profileImage: "https://i.pravatar.cc/150?img=16",
         category: categories[0]._id, // Photographer
-        skills: ["Portrait Photography", "Lifestyle Photography", "Photo Editing"],
+        skills: [
+          "Portrait Photography",
+          "Lifestyle Photography",
+          "Photo Editing",
+        ],
         hourlyRate: 80,
         availability: new Map([
           ["saturday", { start: "10:00", end: "18:00", available: true }],
@@ -338,7 +369,13 @@ const seedData = async () => {
         status: "pending", // This artist is pending approval
       },
     ]);
-    console.log(`Created ${artists.length} artists (${artists.filter(a => a.status === 'approved').length} approved, ${artists.filter(a => a.status === 'pending').length} pending)`);
+    console.log(
+      `Created ${artists.length} artists (${
+        artists.filter((a) => a.status === "approved").length
+      } approved, ${
+        artists.filter((a) => a.status === "pending").length
+      } pending)`
+    );
 
     // 5. Create Bookings
     console.log("Creating bookings...");
@@ -424,7 +461,8 @@ const seedData = async () => {
         artist: artists[0]._id,
         booking: bookings[0]._id,
         rating: 5,
-        comment: "Excellent photographer! Captured all the beautiful moments perfectly. Highly recommended!",
+        comment:
+          "Excellent photographer! Captured all the beautiful moments perfectly. Highly recommended!",
         isVisible: true,
       },
       {
@@ -432,7 +470,8 @@ const seedData = async () => {
         artist: artists[2]._id,
         booking: bookings[2]._id,
         rating: 4,
-        comment: "Great performance! The acoustic set was perfect for our event. Very professional.",
+        comment:
+          "Great performance! The acoustic set was perfect for our event. Very professional.",
         isVisible: true,
       },
       {
@@ -440,7 +479,8 @@ const seedData = async () => {
         artist: artists[3]._id,
         booking: bookings[3]._id,
         rating: 5,
-        comment: "Amazing artist! The portrait turned out exactly as I envisioned. Will definitely book again!",
+        comment:
+          "Amazing artist! The portrait turned out exactly as I envisioned. Will definitely book again!",
         isVisible: true,
       },
     ]);
@@ -480,9 +520,15 @@ const seedData = async () => {
     console.log(`Created ${payments.length} payments`);
 
     // Update bookings with payment references
-    await Booking.findByIdAndUpdate(bookings[0]._id, { payment: payments[0]._id });
-    await Booking.findByIdAndUpdate(bookings[2]._id, { payment: payments[1]._id });
-    await Booking.findByIdAndUpdate(bookings[3]._id, { payment: payments[2]._id });
+    await Booking.findByIdAndUpdate(bookings[0]._id, {
+      payment: payments[0]._id,
+    });
+    await Booking.findByIdAndUpdate(bookings[2]._id, {
+      payment: payments[1]._id,
+    });
+    await Booking.findByIdAndUpdate(bookings[3]._id, {
+      payment: payments[2]._id,
+    });
 
     // 8. Create Notifications
     console.log("Creating notifications...");
@@ -544,4 +590,3 @@ const seedData = async () => {
 
 // Run the seed function
 seedData();
-
