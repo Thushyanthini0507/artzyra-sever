@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { generateToken } from "../config/jwt.js";
 import Category from "./Category.js";
 
 const artistSchema = new mongoose.Schema(
@@ -10,7 +9,6 @@ const artistSchema = new mongoose.Schema(
       ref: "User",
       required: true,
       unique: true,
-      index: true,
     },
     // Profile-specific fields
     bio: {
@@ -54,14 +52,18 @@ const artistSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    // Status fields (synced with Users collection)
-    isApproved: {
-      type: Boolean,
-      default: false, // Requires admin approval
+    // Approval status
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected", "suspended"],
+      default: "pending",
     },
-    isActive: {
-      type: Boolean,
-      default: true,
+    reason: {
+      type: String,
+      trim: true,
+    },
+    verifiedAt: {
+      type: Date,
     },
   },
   {
@@ -69,12 +71,8 @@ const artistSchema = new mongoose.Schema(
   }
 );
 
-// Generate JWT token (uses userId from Users collection)
-artistSchema.methods.getSignedJwtToken = function () {
-  return generateToken({ id: this.userId, role: "artist" });
-};
-
-// Index for search
-artistSchema.index({ name: "text", bio: "text", skills: "text" });
+// Indexes for better query performance
+artistSchema.index({ status: 1 });
+artistSchema.index({ bio: "text", skills: "text" });
 
 export default mongoose.model("Artist", artistSchema);

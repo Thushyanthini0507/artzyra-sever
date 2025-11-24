@@ -80,9 +80,7 @@ pendingArtistSchema.pre("save", async function (next) {
   next();
 });
 
-// Index for email uniqueness
-pendingArtistSchema.index({ email: 1 });
-// Index for search
+// Index for search (email already has unique: true which creates an index)
 pendingArtistSchema.index({ name: "text", bio: "text", skills: "text" });
 
 export default mongoose.model("PendingArtist", pendingArtistSchema);

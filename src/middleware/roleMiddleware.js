@@ -6,7 +6,7 @@ import { asyncHandler } from "./authMiddleware.js";
  * Restricts access based on user roles. Accepts a single role or array of roles.
  * @param {string|string[]} roles - Allowed roles
  */
-export const verifyRole = (roles = []) => {
+export const requireRole = (roles = []) => {
   const allowedRoles = Array.isArray(roles) ? roles : [roles];
   const normalizedRoles = allowedRoles
     .filter((role) => typeof role === "string")
@@ -32,8 +32,11 @@ export const verifyRole = (roles = []) => {
   });
 };
 
+// Backward compatibility export
+export const verifyRole = requireRole;
+
 // Convenience exports for frequently used roles
-export const adminOnly = verifyRole("admin");
-export const artistOnly = verifyRole("artist");
-export const customerOnly = verifyRole("customer");
-export const artistOrCustomer = verifyRole(["artist", "customer"]);
+export const adminOnly = requireRole("admin");
+export const artistOnly = requireRole("artist");
+export const customerOnly = requireRole("customer");
+export const artistOrCustomer = requireRole(["artist", "customer"]);

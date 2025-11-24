@@ -15,9 +15,9 @@ import { verifyRole } from "../middleware/roleMiddleware.js";
 const router = express.Router();
 
 // All customer routes require authentication, approval, and customer role
-// router.use(verifyToken);
-// router.use(checkApproval);
-// router.use(verifyRole("customer"));
+router.use(verifyToken);
+router.use(checkApproval);
+router.use(verifyRole("customer"));
 
 router.get("/profile", getProfile);
 router.put("/profile", updateProfile);

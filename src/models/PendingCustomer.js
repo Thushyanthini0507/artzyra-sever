@@ -58,8 +58,7 @@ pendingCustomerSchema.pre("save", async function (next) {
   next();
 });
 
-// Index for email uniqueness
-pendingCustomerSchema.index({ email: 1 });
+// Note: email already has unique: true which creates an index automatically
 
 export default mongoose.model("PendingCustomer", pendingCustomerSchema);
 

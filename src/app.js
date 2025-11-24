@@ -9,18 +9,17 @@ import connectDB from "./config/db.js";
 import errorHandler from "./middleware/errorMiddleware.js";
 import { apiRateLimiter } from "./middleware/rateLimiter.js";
 
-// Import routes
-import userRoutes from "./routes/userRoutes.js";
+// Import routes (Entity-based architecture)
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
-import artistRoutes from "./routes/artistRoutes.js";
+import artistsRoutes from "./routes/artistsRoutes.js";
 import artistPublicRoutes from "./routes/artistPublicRoutes.js";
-import customerRoutes from "./routes/customerRoutes.js";
-import bookingRoutes from "./routes/bookingRoutes.js";
-import categoryRoutes from "./routes/catergoryRoutes.js";
-import paymentRoutes from "./routes/paymentRoutes.js";
-import reviewRoutes from "./routes/reviewRoutes.js";
-import notificationRoutes from "./routes/notificationRoutes.js";
+import customersRoutes from "./routes/customersRoutes.js";
+import bookingsRoutes from "./routes/bookingRoutes.js";
+import categoriesRoutes from "./routes/catergoryRoutes.js";
+import paymentsRoutes from "./routes/paymentRoutes.js";
+import reviewsRoutes from "./routes/reviewRoutes.js";
+import notificationsRoutes from "./routes/notificationRoutes.js";
 
 // Connect to database
 connectDB();
@@ -43,18 +42,17 @@ app.get("/health", (req, res) => {
   });
 });
 
-// API Routes
-app.use("/api/users", userRoutes); // Registration, login, profile
-app.use("/api/auth", authRoutes); // Legacy authentication endpoints
-app.use("/api/artists", artistPublicRoutes); // Public artist browsing
-app.use("/api/admin", adminRoutes);
-app.use("/api/artist", artistRoutes);
-app.use("/api/customer", customerRoutes);
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/reviews", reviewRoutes);
-app.use("/api/notifications", notificationRoutes);
+// API Routes (Entity-based architecture)
+app.use("/api/auth", authRoutes); // Authentication: register, login, me, logout
+app.use("/api/admin", adminRoutes); // Admin operations
+app.use("/api/artists", artistPublicRoutes); // Public artist browsing (no auth required)
+app.use("/api/artists", artistsRoutes); // Artist profile, bookings, reviews, admin approval
+app.use("/api/customers", customersRoutes); // Customer profile, bookings, reviews
+app.use("/api/bookings", bookingsRoutes); // Booking management
+app.use("/api/categories", categoriesRoutes); // Category management
+app.use("/api/payments", paymentsRoutes); // Payment processing
+app.use("/api/reviews", reviewsRoutes); // Review management
+app.use("/api/notifications", notificationsRoutes); // Notification management
 
 // 404 handler
 app.use((req, res) => {

@@ -1,27 +1,18 @@
 /**
  * User Model
- * Central collection that stores all users (Customer, Artist, Admin, CategoryUser)
- * This is the primary collection - all users must be stored here first
+ * Central collection that stores all users (Customer, Artist, Admin)
+ * Single email = single user account with ONE role
  */
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: [true, "Please provide a name"],
-      trim: true,
-    },
     email: {
       type: String,
       required: [true, "Please provide an email"],
       unique: true,
       lowercase: true,
-      trim: true,
-    },
-    phone: {
-      type: String,
       trim: true,
     },
     password: {
@@ -33,29 +24,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: [true, "Please provide a role"],
-      enum: ["customer", "artist", "admin", "category"],
-    },
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-      default: null,
-      // Only applicable for artists and category users
-    },
-    // Reference to role-specific collection
-    profileRef: {
-      type: mongoose.Schema.Types.ObjectId,
-      // This will point to Customer, Artist, Admin, or CategoryUser _id
-      required: false,
-    },
-    profileType: {
-      type: String,
-      enum: ["Customer", "Artist", "Admin", "CategoryUser"],
-      required: false,
-    },
-    isApproved: {
-      type: Boolean,
-      default: false,
-      // Customers are auto-approved, others need approval
+      enum: ["customer", "artist", "admin"],
     },
     isActive: {
       type: Boolean,
@@ -68,9 +37,8 @@ const userSchema = new mongoose.Schema(
 );
 
 // Indexes for better query performance
-userSchema.index({ email: 1 });
+// Note: email already has unique: true which creates an index automatically
 userSchema.index({ role: 1 });
-userSchema.index({ email: 1, role: 1 });
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {
@@ -87,5 +55,3 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 };
 
 export default mongoose.model("User", userSchema);
-
-

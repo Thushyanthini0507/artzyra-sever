@@ -14,7 +14,6 @@ const categoryUserSchema = new mongoose.Schema(
       ref: "User",
       required: true,
       unique: true,
-      index: true,
     },
     // Category information
     categoryName: {
@@ -106,8 +105,7 @@ const categoryUserSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-categoryUserSchema.index({ userId: 1 });
+// Indexes (userId already has unique: true which creates an index)
 categoryUserSchema.index({ category: 1 });
 categoryUserSchema.index({ categoryName: "text", skills: "text", bio: "text" });
 
