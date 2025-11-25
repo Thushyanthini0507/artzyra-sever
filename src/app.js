@@ -35,7 +35,7 @@ app.use("/api", apiRateLimiter);
 app.use("/api", ensureDBConnection);
 
 // Health check route
-app.get("/health", (req, res) => {
+app.get("/", (req, res) => {
   res.json({
     success: true,
     message: "Server is running",
@@ -66,10 +66,13 @@ app.use((req, res) => {
 // Error handler middleware (must be last)
 app.use(errorHandler);
 
+//Connect Database
+connectDB();
+
 // Only start server if not in Vercel environment
 // Vercel will use the serverless function export
 if (process.env.VERCEL !== "1") {
-  const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
