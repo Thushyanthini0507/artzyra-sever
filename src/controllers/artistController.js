@@ -549,46 +549,100 @@ export const approveArtist = asyncHandler(async (req, res) => {
   const existingUser = await User.findOne({
     email: pendingArtist.email,
   });
+  
+  let user;
+  let artist;
+  
   if (existingUser) {
-    throw new ConflictError("User with this email already exists");
+    // User already exists - check their role and profile
+    if (existingUser.role !== "artist") {
+      // User exists with different role (customer/admin)
+      // This means they registered as customer first, then tried to register as artist
+      // We should reject the pending artist and inform admin
+      pendingArtist.status = "rejected";
+      await pendingArtist.save();
+      
+      throw new ConflictError(
+        `User with this email already exists as ${existingUser.role}. Cannot approve as artist. The pending artist registration has been rejected.`
+      );
+    }
+    
+    // User exists with artist role - check if they have an Artist profile
+    const existingArtist = await Artist.findOne({ userId: existingUser._id });
+    
+    if (existingArtist) {
+      // Artist already approved - this pending artist is a duplicate
+      // Just update pending artist status and return success
+      pendingArtist.status = "approved";
+      await pendingArtist.save();
+      await PendingArtist.findByIdAndDelete(id);
+      
+      const populatedArtist = await Artist.findById(existingArtist._id)
+        .populate("category", "name description image");
+      
+      return res.json({
+        success: true,
+        message: "Artist is already approved. Duplicate pending registration removed.",
+        data: {
+          user: {
+            id: existingUser._id,
+            email: existingUser.email,
+            role: existingUser.role,
+            isActive: existingUser.isActive,
+          },
+          artist: populatedArtist,
+        },
+      });
+    } else {
+      // User exists with artist role but no Artist profile - create the profile
+      // This handles edge case where User was created but Artist profile wasn't
+      user = existingUser;
+      
+      // Create Artist profile from pending artist data
+      artist = await Artist.create({
+        userId: user._id,
+        bio: pendingArtist.bio,
+        profileImage: pendingArtist.profileImage,
+        category: pendingArtist.category._id,
+        skills: pendingArtist.skills,
+        hourlyRate: pendingArtist.hourlyRate,
+        availability: pendingArtist.availability,
+        status: "approved",
+        verifiedAt: new Date(),
+      });
+    }
+  } else {
+    // User doesn't exist - create new user and artist profile
+
+    // Step 1: Create user in Users collection
+    // User model only has: email, password, role, isActive
+    // Password is already hashed in PendingArtist, so we need to bypass the pre-save hook
+    user = await User.create({
+      email: pendingArtist.email,
+      password: "temp123", // Temporary - will be replaced with hashed password
+      role: "artist",
+      isActive: true,
+    });
+
+    // Update password directly to bypass pre-save hook (password is already hashed in PendingArtist)
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { password: pendingArtist.password } }
+    );
+
+    // Step 2: Create Artist profile
+    artist = await Artist.create({
+      userId: user._id,
+      bio: pendingArtist.bio,
+      profileImage: pendingArtist.profileImage,
+      category: pendingArtist.category._id,
+      skills: pendingArtist.skills,
+      hourlyRate: pendingArtist.hourlyRate,
+      availability: pendingArtist.availability,
+      status: "approved",
+      verifiedAt: new Date(),
+    });
   }
-
-  // Step 1: Create user in Users collection
-  // Create with temporary password, then update with actual hashed password
-  const user = await User.create({
-    name: pendingArtist.name,
-    email: pendingArtist.email,
-    phone: pendingArtist.phone,
-    password: "temp123", // Temporary password (will be replaced)
-    role: "artist",
-    category: pendingArtist.category._id,
-    isApproved: true,
-    isActive: true,
-  });
-
-  // Update password directly to bypass pre-save hook (password is already hashed)
-  await User.updateOne(
-    { _id: user._id },
-    { $set: { password: pendingArtist.password } }
-  );
-
-  // Step 2: Create Artist profile
-  const artist = await Artist.create({
-    userId: user._id,
-    bio: pendingArtist.bio,
-    profileImage: pendingArtist.profileImage,
-    category: pendingArtist.category._id,
-    skills: pendingArtist.skills,
-    hourlyRate: pendingArtist.hourlyRate,
-    availability: pendingArtist.availability,
-    isApproved: true,
-    isActive: true,
-  });
-
-  // Step 3: Link User to Artist profile
-  user.profileRef = artist._id;
-  user.profileType = "Artist";
-  await user.save();
 
   // Step 4: Update pending artist status and delete
   pendingArtist.status = "approved";
@@ -606,10 +660,9 @@ export const approveArtist = asyncHandler(async (req, res) => {
     data: {
       user: {
         id: user._id,
-        name: user.name,
         email: user.email,
         role: user.role,
-        isApproved: user.isApproved,
+        isActive: user.isActive,
       },
       artist: populatedArtist,
     },
