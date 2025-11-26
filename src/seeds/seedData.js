@@ -102,6 +102,14 @@ const seedData = async () => {
           "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400",
         isActive: true,
       },
+      {
+        name: "Design",
+        description:
+          "Graphic designers, logo designers, and digital artists specializing in visual design",
+        image:
+          "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400",
+        isActive: true,
+      },
     ]);
     console.log(`Created ${categories.length} categories`);
 

@@ -8,7 +8,8 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "seed": "node src/seeds/adminSeed.js",
-    "seed:data": "node src/seeds/seedData.js"
+    "seed:data": "node src/seeds/seedData.js",
+    "seed:categories": "node src/seeds/categorySeed.js"
   },
   "author": "",
   "license": "ISC",

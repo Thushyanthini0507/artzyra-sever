@@ -71,6 +71,30 @@ const pendingArtistSchema = new mongoose.Schema(
   }
 );
 
+// Transform availability field before validation
+// This handles string values and converts them to proper Map format
+pendingArtistSchema.pre("validate", function (next) {
+  if (this.availability && typeof this.availability === "string") {
+    // Convert string to default weekday schedule
+    this.availability = {
+      monday: { start: "09:00", end: "18:00", available: true },
+      tuesday: { start: "09:00", end: "18:00", available: true },
+      wednesday: { start: "09:00", end: "18:00", available: true },
+      thursday: { start: "09:00", end: "18:00", available: true },
+      friday: { start: "09:00", end: "18:00", available: true },
+      saturday: { start: "09:00", end: "18:00", available: false },
+      sunday: { start: "09:00", end: "18:00", available: false },
+    };
+  } else if (this.availability instanceof Map) {
+    // Convert Map to plain object
+    this.availability = Object.fromEntries(this.availability);
+  } else if (!this.availability || (typeof this.availability === "object" && Object.keys(this.availability).length === 0)) {
+    // Ensure empty object if null/undefined
+    this.availability = {};
+  }
+  next();
+});
+
 // Hash password before saving
 pendingArtistSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {

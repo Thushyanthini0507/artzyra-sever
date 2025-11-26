@@ -350,7 +350,55 @@ export const registerArtist = asyncHandler(async (req, res) => {
     throw new BadRequestError("Invalid category provided");
   }
 
+  // Handle availability - convert string to proper format for Mongoose Map
+  // CRITICAL: Mongoose Map type requires a plain object, NOT a string
+  // We MUST convert strings to objects before passing to Mongoose.create()
+  let availabilityData = {};
+  
+  // Always process availability to ensure it's never a string when passed to Mongoose
+  if (availability !== undefined && availability !== null) {
+    const availabilityType = typeof availability;
+    
+    if (availabilityType === "string") {
+      // String format: "Available for part-time and project-based work"
+      // Convert to default weekday schedule (Monday-Friday, 9 AM - 6 PM)
+      // Mongoose will convert this plain object to a Map automatically
+      availabilityData = {
+        monday: { start: "09:00", end: "18:00", available: true },
+        tuesday: { start: "09:00", end: "18:00", available: true },
+        wednesday: { start: "09:00", end: "18:00", available: true },
+        thursday: { start: "09:00", end: "18:00", available: true },
+        friday: { start: "09:00", end: "18:00", available: true },
+        saturday: { start: "09:00", end: "18:00", available: false },
+        sunday: { start: "09:00", end: "18:00", available: false },
+      };
+    } else if (availabilityType === "object") {
+      // Object format: { "monday": { "start": "09:00", "end": "18:00", "available": true }, ... }
+      if (availability instanceof Map) {
+        // Convert Map to plain object
+        availabilityData = Object.fromEntries(availability);
+      } else if (availability !== null && !Array.isArray(availability)) {
+        // Use the plain object directly (validate structure)
+        // Ensure it's a valid object with proper structure
+        const validAvailability = {};
+        for (const [key, value] of Object.entries(availability)) {
+          if (value && typeof value === "object" && !Array.isArray(value)) {
+            validAvailability[key] = value;
+          }
+        }
+        availabilityData = Object.keys(validAvailability).length > 0 ? validAvailability : {};
+      }
+    }
+    // If availability is empty string, null, array, or invalid, use empty object (default)
+  }
+  
+  // Final safety check: ensure availabilityData is always an object, never a string
+  if (typeof availabilityData === "string") {
+    availabilityData = {};
+  }
+
   // Create pending artist (password will be hashed by pre-save hook)
+  // Mongoose will automatically convert the plain object to a Map for the availability field
   const pendingArtist = await PendingArtist.create({
     name: name?.trim() || "",
     email: normalizedEmail,
@@ -361,7 +409,7 @@ export const registerArtist = asyncHandler(async (req, res) => {
     category: categoryId,
     skills: skills || [],
     hourlyRate: hourlyRate || 0,
-    availability: availability || {},
+    availability: availabilityData,
     status: "pending",
   });
 
