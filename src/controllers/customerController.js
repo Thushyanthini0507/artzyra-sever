@@ -38,14 +38,53 @@ export const getProfile = asyncHandler(async (req, res) => {
  * @route PUT /api/customers/profile
  */
 export const updateProfile = asyncHandler(async (req, res) => {
-  const { name, phone, address, profileImage } = req.body;
+  const {
+    name,
+    phone,
+    address,
+    profileImage,
+    dateOfBirth,
+    gender,
+    preferences,
+    socialLinks,
+    emergencyContact,
+    bio,
+  } = req.body;
+
+  // Import phone validation utilities
+  const { normalizeSriLankanPhone, isValidSriLankanPhone } = await import("../utils/phoneValidation.js");
 
   // Customer profile fields - name and phone are now in Customer model
   const customerUpdateData = {};
   if (name) customerUpdateData.name = name;
-  if (phone) customerUpdateData.phone = phone;
+  if (phone) {
+    // Validate and normalize phone number
+    if (!isValidSriLankanPhone(phone)) {
+      throw new BadRequestError("Please provide a valid Sri Lankan phone number (e.g., 0712345678 or 712345678)");
+    }
+    customerUpdateData.phone = normalizeSriLankanPhone(phone);
+  }
   if (address) customerUpdateData.address = address;
   if (profileImage !== undefined) customerUpdateData.profileImage = profileImage;
+  if (dateOfBirth !== undefined) customerUpdateData.dateOfBirth = dateOfBirth;
+  if (gender !== undefined) customerUpdateData.gender = gender;
+  if (preferences !== undefined) customerUpdateData.preferences = preferences;
+  if (socialLinks !== undefined) customerUpdateData.socialLinks = socialLinks;
+  if (emergencyContact !== undefined) {
+    // Validate and normalize emergency contact phone
+    if (emergencyContact.phone) {
+      if (!isValidSriLankanPhone(emergencyContact.phone)) {
+        throw new BadRequestError("Please provide a valid Sri Lankan phone number for emergency contact (e.g., 0712345678 or 712345678)");
+      }
+      customerUpdateData.emergencyContact = {
+        ...emergencyContact,
+        phone: normalizeSriLankanPhone(emergencyContact.phone),
+      };
+    } else {
+      customerUpdateData.emergencyContact = emergencyContact;
+    }
+  }
+  if (bio !== undefined) customerUpdateData.bio = bio;
 
   // Find customer profile by userId (req.userId is the User ID)
   const customer = await Customer.findOneAndUpdate(

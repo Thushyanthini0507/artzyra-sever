@@ -106,11 +106,21 @@ export const registerUser = asyncHandler(async (req, res) => {
       isActive: true,
     });
 
+    // Validate and normalize phone number if provided
+    let normalizedPhone = "";
+    if (phone) {
+      const { normalizeSriLankanPhone, isValidSriLankanPhone } = await import("../utils/phoneValidation.js");
+      if (!isValidSriLankanPhone(phone)) {
+        throw new BadRequestError("Please provide a valid Sri Lankan phone number (e.g., 0712345678 or 712345678)");
+      }
+      normalizedPhone = normalizeSriLankanPhone(phone);
+    }
+
     // Step 2: Create Customer profile
     const customer = await Customer.create({
       userId: user._id,
       name: name || "",
-      phone: phone || "",
+      phone: normalizedPhone,
       address,
       profileImage: req.body.profileImage || "",
       isApproved: true,
@@ -182,12 +192,22 @@ export const registerUser = asyncHandler(async (req, res) => {
       );
     }
 
+    // Validate and normalize phone number if provided
+    let normalizedPhone = "";
+    if (phone) {
+      const { normalizeSriLankanPhone, isValidSriLankanPhone } = await import("../utils/phoneValidation.js");
+      if (!isValidSriLankanPhone(phone)) {
+        throw new BadRequestError("Please provide a valid Sri Lankan phone number (e.g., 0712345678 or 712345678)");
+      }
+      normalizedPhone = normalizeSriLankanPhone(phone);
+    }
+
     // Create pending artist (password will be hashed by pre-save hook)
     const pendingArtist = await PendingArtist.create({
       name: name.trim(),
       email: normalizedEmail,
       password, // Will be hashed by pre-save hook
-      phone: phone?.trim(),
+      phone: normalizedPhone,
       bio,
       profileImage: req.body.profileImage || "",
       category: categoryId,

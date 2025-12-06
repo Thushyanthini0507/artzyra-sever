@@ -427,15 +427,39 @@ export const getProfile = asyncHandler(async (req, res) => {
  * @route PUT /api/admin/profile
  */
 export const updateProfile = asyncHandler(async (req, res) => {
-  const { name, phone, permissions } = req.body;
+  const {
+    name,
+    phone,
+    permissions,
+    profileImage,
+    bio,
+    department,
+    position,
+    socialLinks,
+    location,
+  } = req.body;
   const Admin = (await import("../models/Admin.js")).default;
   const User = (await import("../models/User.js")).default;
+  const { normalizeSriLankanPhone, isValidSriLankanPhone } = await import("../utils/phoneValidation.js");
+  const { BadRequestError } = await import("../utils/errors.js");
   
   // Update Admin profile - name and phone are in Admin model, not User model
   const adminUpdateData = {};
   if (name) adminUpdateData.name = name;
-  if (phone) adminUpdateData.phone = phone;
+  if (phone) {
+    // Validate and normalize phone number
+    if (!isValidSriLankanPhone(phone)) {
+      throw new BadRequestError("Please provide a valid Sri Lankan phone number (e.g., 0712345678 or 712345678)");
+    }
+    adminUpdateData.phone = normalizeSriLankanPhone(phone);
+  }
   if (permissions !== undefined) adminUpdateData.permissions = permissions;
+  if (profileImage !== undefined) adminUpdateData.profileImage = profileImage;
+  if (bio !== undefined) adminUpdateData.bio = bio;
+  if (department !== undefined) adminUpdateData.department = department;
+  if (position !== undefined) adminUpdateData.position = position;
+  if (socialLinks !== undefined) adminUpdateData.socialLinks = socialLinks;
+  if (location !== undefined) adminUpdateData.location = location;
   
   const admin = await Admin.findOneAndUpdate(
     { userId: req.userId },

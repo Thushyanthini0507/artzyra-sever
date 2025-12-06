@@ -60,18 +60,43 @@ export const updateProfile = asyncHandler(async (req, res) => {
     hourlyRate,
     availability,
     profileImage,
+    portfolio,
+    website,
+    socialLinks,
+    experience,
+    education,
+    certifications,
+    languages,
+    location,
   } = req.body;
+
+  // Import phone validation utilities
+  const { normalizeSriLankanPhone, isValidSriLankanPhone } = await import("../utils/phoneValidation.js");
 
   // Separate Artist profile fields - name and phone are in Artist model, not User
   const artistUpdateData = {};
   if (name) artistUpdateData.name = name;
-  if (phone) artistUpdateData.phone = phone;
+  if (phone) {
+    // Validate and normalize phone number
+    if (!isValidSriLankanPhone(phone)) {
+      throw new BadRequestError("Please provide a valid Sri Lankan phone number (e.g., 0712345678 or 712345678)");
+    }
+    artistUpdateData.phone = normalizeSriLankanPhone(phone);
+  }
   if (bio !== undefined) artistUpdateData.bio = bio;
   if (category) artistUpdateData.category = category;
   if (skills) artistUpdateData.skills = skills;
   if (hourlyRate !== undefined) artistUpdateData.hourlyRate = hourlyRate;
   if (availability) artistUpdateData.availability = availability;
   if (profileImage !== undefined) artistUpdateData.profileImage = profileImage;
+  if (portfolio !== undefined) artistUpdateData.portfolio = portfolio;
+  if (website !== undefined) artistUpdateData.website = website;
+  if (socialLinks !== undefined) artistUpdateData.socialLinks = socialLinks;
+  if (experience !== undefined) artistUpdateData.experience = experience;
+  if (education !== undefined) artistUpdateData.education = education;
+  if (certifications !== undefined) artistUpdateData.certifications = certifications;
+  if (languages !== undefined) artistUpdateData.languages = languages;
+  if (location !== undefined) artistUpdateData.location = location;
 
   // Find artist profile by userId (req.userId is the User ID)
   const artist = await Artist.findOneAndUpdate(

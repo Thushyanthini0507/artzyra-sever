@@ -292,10 +292,20 @@ export const registerCustomer = asyncHandler(async (req, res) => {
   });
 
   // Step 2: Create Customer profile
+  // Validate and normalize phone number if provided
+  let normalizedPhone = "";
+  if (phone) {
+    const { normalizeSriLankanPhone, isValidSriLankanPhone } = await import("../utils/phoneValidation.js");
+    if (!isValidSriLankanPhone(phone)) {
+      throw new BadRequestError("Please provide a valid Sri Lankan phone number (e.g., 0712345678 or 712345678)");
+    }
+    normalizedPhone = normalizeSriLankanPhone(phone);
+  }
+
   const customer = await Customer.create({
     userId: user._id,
     name: name || "",
-    phone: phone || "",
+    phone: normalizedPhone,
     address: address || {},
     profileImage: profileImage || "",
     isActive: true,
