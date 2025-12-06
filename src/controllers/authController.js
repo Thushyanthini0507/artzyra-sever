@@ -156,13 +156,27 @@ export const login = asyncHandler(async (req, res) => {
     }
   }
 
+  // Set cookie with token
+  // Localhost: secure: false, sameSite: "lax"
+  // Production: secure: true, sameSite: "none"
+  const isProduction = process.env.NODE_ENV === "production";
+  const cookieOptions = {
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: "/",
+    secure: isProduction, // true in production (HTTPS), false in development (HTTP)
+    sameSite: isProduction ? "none" : "lax", // "none" for production (cross-site), "lax" for localhost
+  };
+
+  res.cookie("token", token, cookieOptions);
+
   res.json({
     success: true,
     message: "Login successful",
     data: {
       user: userResponse,
       profile,
-      token,
+      token, // Still return token for backward compatibility
       redirectPath, // Role-based redirection path for frontend
     },
   });
@@ -215,13 +229,21 @@ export const getProfile = getMe;
  * @route POST /api/auth/logout
  */
 export const logout = asyncHandler(async (req, res) => {
-  // Since JWT tokens are stateless, logout is primarily handled client-side
-  // by removing the token from storage. This endpoint validates the token
-  // and confirms logout.
+  // Clear the token cookie
+  const isProduction = process.env.NODE_ENV === "production";
+  const cookieOptions = {
+    httpOnly: true,
+    maxAge: 0, // Immediately expire
+    path: "/",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  };
+
+  res.cookie("token", "", cookieOptions);
 
   res.json({
     success: true,
-    message: "Logout successful. Please remove the token from client storage.",
+    message: "Logout successful",
     data: {
       userId: req.userId,
       role: req.userRole,
@@ -272,6 +294,8 @@ export const registerCustomer = asyncHandler(async (req, res) => {
   // Step 2: Create Customer profile
   const customer = await Customer.create({
     userId: user._id,
+    name: name || "",
+    phone: phone || "",
     address: address || {},
     profileImage: profileImage || "",
     isActive: true,
@@ -279,6 +303,18 @@ export const registerCustomer = asyncHandler(async (req, res) => {
 
   // Step 4: Generate token for immediate access
   const token = generateToken({ id: user._id, role: user.role });
+
+  // Set cookie with token
+  const isProduction = process.env.NODE_ENV === "production";
+  const cookieOptions = {
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: "/",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  };
+
+  res.cookie("token", token, cookieOptions);
 
   return res.status(201).json({
     success: true,
@@ -291,7 +327,7 @@ export const registerCustomer = asyncHandler(async (req, res) => {
         isActive: user.isActive,
         profileId: customer._id,
       },
-      token, // Return token for immediate access
+      token, // Return token for backward compatibility
       redirectPath: "/customer/dashboard", // Role-based redirection path
     },
   });

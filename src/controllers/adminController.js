@@ -381,6 +381,86 @@ export const getPendingArtists = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Get admin profile
+ * @route GET /api/admin/profile
+ */
+export const getProfile = asyncHandler(async (req, res) => {
+  const Admin = (await import("../models/Admin.js")).default;
+  const User = (await import("../models/User.js")).default;
+  
+  // Get admin profile
+  const admin = await Admin.findOne({ userId: req.userId });
+  
+  // Auto-create Admin profile if it doesn't exist
+  if (!admin) {
+    const newAdmin = await Admin.create({
+      userId: req.userId,
+      permissions: [],
+    });
+    
+    // Get user data
+    const user = await User.findById(req.userId).select("-password");
+    
+    return res.json({
+      success: true,
+      data: {
+        user,
+        admin: newAdmin,
+      },
+    });
+  }
+  
+  // Get user data
+  const user = await User.findById(req.userId).select("-password");
+  
+  res.json({
+    success: true,
+    data: {
+      user,
+      admin,
+    },
+  });
+});
+
+/**
+ * Update admin profile
+ * @route PUT /api/admin/profile
+ */
+export const updateProfile = asyncHandler(async (req, res) => {
+  const { name, phone, permissions } = req.body;
+  const Admin = (await import("../models/Admin.js")).default;
+  const User = (await import("../models/User.js")).default;
+  
+  // Update Admin profile - name and phone are in Admin model, not User model
+  const adminUpdateData = {};
+  if (name) adminUpdateData.name = name;
+  if (phone) adminUpdateData.phone = phone;
+  if (permissions !== undefined) adminUpdateData.permissions = permissions;
+  
+  const admin = await Admin.findOneAndUpdate(
+    { userId: req.userId },
+    adminUpdateData,
+    {
+      new: true,
+      runValidators: true,
+      upsert: true, // Create if doesn't exist
+    }
+  );
+  
+  // Get updated user data
+  const user = await User.findById(req.userId).select("-password");
+  
+  res.json({
+    success: true,
+    message: "Profile updated successfully",
+    data: {
+      user,
+      admin,
+    },
+  });
+});
+
+/**
  * Get dashboard stats (Admin only)
  * @route GET /api/admin/dashboard/stats
  */

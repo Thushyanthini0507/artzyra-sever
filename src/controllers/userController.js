@@ -109,6 +109,8 @@ export const registerUser = asyncHandler(async (req, res) => {
     // Step 2: Create Customer profile
     const customer = await Customer.create({
       userId: user._id,
+      name: name || "",
+      phone: phone || "",
       address,
       profileImage: req.body.profileImage || "",
       isApproved: true,

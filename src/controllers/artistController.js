@@ -33,10 +33,14 @@ export const getProfile = asyncHandler(async (req, res) => {
   if (!artist) {
     throw new NotFoundError("Artist");
   }
+  
+  // Get user data
+  const user = await User.findById(req.userId).select("-password");
 
   res.json({
     success: true,
     data: {
+      user,
       artist,
     },
   });
@@ -58,24 +62,16 @@ export const updateProfile = asyncHandler(async (req, res) => {
     profileImage,
   } = req.body;
 
-  // Separate Artist profile fields from User fields
+  // Separate Artist profile fields - name and phone are in Artist model, not User
   const artistUpdateData = {};
+  if (name) artistUpdateData.name = name;
+  if (phone) artistUpdateData.phone = phone;
   if (bio !== undefined) artistUpdateData.bio = bio;
   if (category) artistUpdateData.category = category;
   if (skills) artistUpdateData.skills = skills;
   if (hourlyRate !== undefined) artistUpdateData.hourlyRate = hourlyRate;
   if (availability) artistUpdateData.availability = availability;
   if (profileImage !== undefined) artistUpdateData.profileImage = profileImage;
-
-  // Update User collection if name or phone changed (name and phone are in User, not Artist)
-  if (name || phone) {
-    const userUpdateData = {};
-    if (name) userUpdateData.name = name;
-    if (phone) userUpdateData.phone = phone;
-    await User.findByIdAndUpdate(req.userId, userUpdateData, {
-      runValidators: true,
-    });
-  }
 
   // Find artist profile by userId (req.userId is the User ID)
   const artist = await Artist.findOneAndUpdate(
@@ -92,11 +88,15 @@ export const updateProfile = asyncHandler(async (req, res) => {
   if (!artist) {
     throw new NotFoundError("Artist");
   }
+  
+  // Get updated user data
+  const user = await User.findById(req.userId).select("-password");
 
   res.json({
     success: true,
     message: "Profile updated successfully",
     data: {
+      user,
       artist,
     },
   });

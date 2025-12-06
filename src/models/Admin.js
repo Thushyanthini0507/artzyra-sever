@@ -9,7 +9,16 @@ const adminSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    // Admin-specific fields can be added here
+    // Profile fields
+    name: {
+      type: String,
+      trim: true,
+    },
+    phone: {
+      type: String,
+      trim: true,
+    },
+    // Admin-specific fields
     permissions: {
       type: [String],
       default: [],

@@ -26,8 +26,12 @@ export const asyncHandler = (fn) => {
 export const verifyToken = asyncHandler(async (req, res, next) => {
   let token;
 
-  // Extract token from Authorization header
-  if (
+  // Priority 1: Extract token from cookie (preferred for security)
+  if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
+  // Priority 2: Extract token from Authorization header (fallback)
+  else if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
   ) {
@@ -106,8 +110,12 @@ export const authenticate = verifyToken;
 export const authOptional = asyncHandler(async (req, res, next) => {
   let token;
 
-  // Extract token from Authorization header
-  if (
+  // Priority 1: Extract token from cookie
+  if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
+  // Priority 2: Extract token from Authorization header
+  else if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
   ) {
@@ -165,10 +173,17 @@ export const checkApproval = asyncHandler(async (req, res, next) => {
   // For artists, check if status is "approved"
   if (req.userRole === "artist") {
     const artist = await Artist.findOne({ userId: req.userId });
-    if (!artist || artist.status !== "approved") {
-    throw new ForbiddenError(
-      "Your account is pending approval. Please wait for admin approval."
-    );
+    if (!artist) {
+      throw new ForbiddenError(
+        "Your account is pending approval. Please wait for admin approval."
+      );
+    }
+    // Check status (case-insensitive and handle different status values)
+    const artistStatus = String(artist.status || "").toLowerCase().trim();
+    if (artistStatus !== "approved") {
+      throw new ForbiddenError(
+        `Your account is pending approval. Current status: ${artist.status || "pending"}. Please wait for admin approval.`
+      );
     }
   }
 

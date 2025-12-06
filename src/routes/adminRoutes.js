@@ -9,6 +9,8 @@ import {
   getAllBookings,
   getPendingArtists,
   getDashboardStatus,
+  getProfile,
+  updateProfile,
 } from "../controllers/adminController.js";
 import {
   approveArtist,
@@ -24,6 +26,10 @@ const router = express.Router();
 router.use(verifyToken);
 router.use(checkApproval);
 router.use(verifyRole("admin"));
+
+// Admin profile routes (admin can update their own profile)
+router.get("/profile", getProfile);
+router.put("/profile", updateProfile);
 
 router.get("/users", getUsersByRole);
 router.get("/users/:role/:userId", getUserById);

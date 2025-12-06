@@ -11,18 +11,23 @@ import { formatPaginationResponse } from "../utils/paginate.js";
 
 /**
  * Get customer profile
- * @route GET /api/customer/profile
+ * @route GET /api/customers/profile
  */
 export const getProfile = asyncHandler(async (req, res) => {
-  const customer = await Customer.findById(req.userId).select("-password");
+  // Find customer profile by userId (req.userId is the User ID)
+  const customer = await Customer.findOne({ userId: req.userId }).select("-password");
 
   if (!customer) {
     throw new NotFoundError("Customer not found");
   }
+  
+  // Get user data
+  const user = await User.findById(req.userId).select("-password");
 
   res.json({
     success: true,
     data: {
+      user,
       customer,
     },
   });
@@ -30,30 +35,40 @@ export const getProfile = asyncHandler(async (req, res) => {
 
 /**
  * Update customer profile
- * @route PUT /api/customer/profile
+ * @route PUT /api/customers/profile
  */
 export const updateProfile = asyncHandler(async (req, res) => {
   const { name, phone, address, profileImage } = req.body;
 
-  const updateData = {};
-  if (name) updateData.name = name;
-  if (phone) updateData.phone = phone;
-  if (address) updateData.address = address;
-  if (profileImage !== undefined) updateData.profileImage = profileImage;
+  // Customer profile fields - name and phone are now in Customer model
+  const customerUpdateData = {};
+  if (name) customerUpdateData.name = name;
+  if (phone) customerUpdateData.phone = phone;
+  if (address) customerUpdateData.address = address;
+  if (profileImage !== undefined) customerUpdateData.profileImage = profileImage;
 
-  const customer = await Customer.findByIdAndUpdate(req.userId, updateData, {
-    new: true,
-    runValidators: true,
-  }).select("-password");
+  // Find customer profile by userId (req.userId is the User ID)
+  const customer = await Customer.findOneAndUpdate(
+    { userId: req.userId },
+    customerUpdateData,
+    {
+      new: true,
+      runValidators: true,
+    }
+  ).select("-password");
 
   if (!customer) {
     throw new NotFoundError("Customer not found");
   }
+  
+  // Get updated user data
+  const user = await User.findById(req.userId).select("-password");
 
   res.json({
     success: true,
     message: "Profile updated successfully",
     data: {
+      user,
       customer,
     },
   });
