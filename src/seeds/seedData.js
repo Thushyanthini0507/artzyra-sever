@@ -39,75 +39,148 @@ const seedData = async () => {
 
     // 1. Create Categories
     console.log("Creating categories...");
+    // Get Cloudinary cloud name from environment or use default
+    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'your-cloud-name';
+    
     const categories = await Category.insertMany([
       {
-        name: "Photographer",
+        name: "Animator",
         description:
-          "Professional photographers for events, portraits, and commercial work",
-        image:
-          "https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=400",
+          "Professional animators and motion graphics artists. 2D and 3D animation, video editing, and creative visual storytelling.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/animator.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Caterer",
+        description:
+          "Professional catering services for events, weddings, and corporate functions. Custom menus, food presentation, and exceptional service.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/caterer.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Comedian",
+        description:
+          "Professional comedians and entertainers for events, shows, and performances. Stand-up comedy, MC services, and entertainment.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/comedian.jpg`,
         isActive: true,
       },
       {
         name: "DJ",
-        description: "Professional DJs for parties, weddings, and events",
-        image:
-          "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=400",
-        isActive: true,
-      },
-
-      {
-        name: "Musician",
-        description: "Talented musicians for live performances",
-        image:
-          "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400",
-        isActive: true,
-      },
-      {
-        name: "Painter",
         description:
-          "Artists specializing in portraits, murals, and custom artwork",
-        image:
-          "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400",
+          "Professional DJs for parties, weddings, corporate events, and nightclubs. Expert music mixing, sound engineering, and creating the perfect atmosphere.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/dj.jpg`,
         isActive: true,
       },
       {
         name: "Dancer",
-        description: "Professional dancers and choreographers",
-        image:
-          "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?w=400",
+        description:
+          "Professional dancers and choreographers. Specialized in contemporary, hip-hop, ballroom, and various dance styles for performances and events.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/dancer.jpg`,
         isActive: true,
       },
       {
-        name: "Videographer",
+        name: "Decorator",
         description:
-          "Professional videographers for weddings, events, and commercial projects",
-        image:
-          "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400",
-        isActive: true,
-      },
-      {
-        name: "Makeup Artist",
-        description:
-          "Professional makeup artists for events, photoshoots, and special occasions",
-        image:
-          "https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=400",
-        isActive: true,
-      },
-      {
-        name: "Singer",
-        description:
-          "Professional singers and vocalists for events and performances",
-        image:
-          "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400",
+          "Event decorators and interior designers. Specialized in venue decoration, theme design, and creating beautiful event spaces.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/decorator.jpg`,
         isActive: true,
       },
       {
         name: "Design",
         description:
-          "Graphic designers, logo designers, and digital artists specializing in visual design",
-        image:
-          "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400",
+          "Graphic designers, logo designers, and digital artists specializing in visual design. Brand identity, UI/UX design, and creative digital solutions.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/design.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Event Planner",
+        description:
+          "Professional event planners and coordinators. Specialized in weddings, corporate events, parties, and special celebrations. Full-service event management.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/event_planner.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Florist",
+        description:
+          "Creative florists and flower arrangers. Specialized in wedding bouquets, event decorations, centerpieces, and custom floral designs.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/florist.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Hair Stylist",
+        description:
+          "Professional hair stylists for events, weddings, photoshoots, and special occasions. Expert in cutting, coloring, and styling.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/hair_stylist.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Magician",
+        description:
+          "Professional magicians and illusionists for events, parties, and entertainment. Close-up magic, stage shows, and interactive performances.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/magician.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Makeup Artist",
+        description:
+          "Professional makeup artists for events, photoshoots, weddings, and special occasions. Expert in bridal, editorial, and special effects makeup.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/makeup_artist.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Musician",
+        description:
+          "Talented musicians for live performances, events, and recordings. Acoustic and electric performances across various genres.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/musician.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Painter",
+        description:
+          "Artists specializing in portraits, murals, custom artwork, and digital art. Bringing your vision to life with creative expertise.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/painter.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Photographer",
+        description:
+          "Professional photographers for events, portraits, weddings, and commercial work. Specialized in capturing beautiful moments and creating lasting memories.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/photographer.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Singer",
+        description:
+          "Professional singers and vocalists for events and performances. Specialized in jazz, pop, classical, and various music genres.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/singer.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Tattoo Artist",
+        description:
+          "Professional tattoo artists and body art specialists. Custom tattoo designs, cover-ups, and artistic body modifications.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/tattoo_artist.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Videographer",
+        description:
+          "Professional videographers for weddings, events, corporate videos, and commercial projects. Expert in video production, editing, and drone footage.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/videographer.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Voice Actor",
+        description:
+          "Professional voice actors and narrators. Voice-over services for commercials, videos, audiobooks, and multimedia projects.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/voice_actor.jpg`,
+        isActive: true,
+      },
+      {
+        name: "Writer",
+        description:
+          "Professional writers and content creators. Specialized in copywriting, content writing, scriptwriting, and creative writing services.",
+        image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/writer.jpg`,
         isActive: true,
       },
     ]);
