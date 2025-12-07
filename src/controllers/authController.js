@@ -489,18 +489,41 @@ export const registerArtist = asyncHandler(async (req, res) => {
     availabilityData = {};
   }
 
+  // Process skills - convert string to array if needed
+  let skillsArray = [];
+  if (skills) {
+    if (typeof skills === "string") {
+      // Split comma-separated string and trim each skill
+      skillsArray = skills
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    } else if (Array.isArray(skills)) {
+      skillsArray = skills.map((s) => (typeof s === "string" ? s.trim() : s)).filter((s) => s);
+    }
+  }
+
+  // Process hourlyRate - convert string to number if needed
+  let hourlyRateNum = 0;
+  if (hourlyRate !== undefined && hourlyRate !== null && hourlyRate !== "") {
+    hourlyRateNum = typeof hourlyRate === "string" ? parseFloat(hourlyRate) : Number(hourlyRate);
+    if (isNaN(hourlyRateNum) || hourlyRateNum < 0) {
+      hourlyRateNum = 0;
+    }
+  }
+
   // Create pending artist (password will be hashed by pre-save hook)
   // Mongoose will automatically convert the plain object to a Map for the availability field
   const pendingArtist = await PendingArtist.create({
     name: name?.trim() || "",
     email: normalizedEmail,
     password, // Will be hashed by pre-save hook
-    phone: phone?.trim(),
-    bio,
+    phone: phone?.trim() || "",
+    bio: bio || "",
     profileImage: profileImage || "",
     category: categoryId,
-    skills: skills || [],
-    hourlyRate: hourlyRate || 0,
+    skills: skillsArray,
+    hourlyRate: hourlyRateNum,
     availability: availabilityData,
     status: "pending",
   });
