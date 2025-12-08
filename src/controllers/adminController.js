@@ -388,27 +388,13 @@ export const getProfile = asyncHandler(async (req, res) => {
   const Admin = (await import("../models/Admin.js")).default;
   const User = (await import("../models/User.js")).default;
   
-  // Get admin profile
-  const admin = await Admin.findOne({ userId: req.userId });
-  
-  // Auto-create Admin profile if it doesn't exist
-  if (!admin) {
-    const newAdmin = await Admin.create({
-      userId: req.userId,
-      permissions: [],
-    });
-    
-    // Get user data
-    const user = await User.findById(req.userId).select("-password");
-    
-    return res.json({
-      success: true,
-      data: {
-        user,
-        admin: newAdmin,
-      },
-    });
-  }
+  // Get admin profile - use findOneAndUpdate with upsert to atomically create if it doesn't exist
+  // This prevents race conditions when multiple requests try to create the profile simultaneously
+  const admin = await Admin.findOneAndUpdate(
+    { userId: req.userId },
+    { userId: req.userId, permissions: [] },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
   
   // Get user data
   const user = await User.findById(req.userId).select("-password");
@@ -499,8 +485,10 @@ export const getDashboardStatus = asyncHandler(async (req, res) => {
     totalPayments,
     totalReviews,
   ] = await Promise.all([
-    Artist.countDocuments(),
-    Customer.countDocuments(),
+    // Count Users with artist role (source of truth for user counts)
+    User.countDocuments({ role: "artist" }),
+    // Count Users with customer role (source of truth for user counts)
+    User.countDocuments({ role: "customer" }),
     Booking.countDocuments(),
     Booking.countDocuments({ status: "pending" }),
     Payment.aggregate([

@@ -73,14 +73,13 @@ export const verifyToken = asyncHandler(async (req, res, next) => {
       profile = await Artist.findOne({ userId: user._id })
         .populate("category", "name description");
     } else if (user.role === "admin") {
-      profile = await Admin.findOne({ userId: user._id });
-      // Auto-create Admin profile if it doesn't exist
-      if (!profile) {
-        profile = await Admin.create({
-          userId: user._id,
-          permissions: [],
-        });
-      }
+      // Use findOneAndUpdate with upsert to atomically create Admin profile if it doesn't exist
+      // This prevents race conditions when multiple requests try to create the profile simultaneously
+      profile = await Admin.findOneAndUpdate(
+        { userId: user._id },
+        { userId: user._id, permissions: [] },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
     }
 
     // Attach user and profile to request
@@ -139,7 +138,13 @@ export const authOptional = asyncHandler(async (req, res, next) => {
           profile = await Artist.findOne({ userId: user._id })
             .populate("category", "name description");
         } else if (user.role === "admin") {
-          profile = await Admin.findOne({ userId: user._id });
+          // Use findOneAndUpdate with upsert to atomically create Admin profile if it doesn't exist
+          // This prevents race conditions when multiple requests try to create the profile simultaneously
+          profile = await Admin.findOneAndUpdate(
+            { userId: user._id },
+            { userId: user._id, permissions: [] },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          );
         }
 
         // Attach user and profile to request

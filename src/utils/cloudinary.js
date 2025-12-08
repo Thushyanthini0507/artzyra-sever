@@ -5,11 +5,30 @@
 import { v2 as cloudinary } from "cloudinary";
 
 // Configure Cloudinary
-cloudinary.config({
+const cloudinaryConfig = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+};
+
+// Validate Cloudinary configuration
+const isCloudinaryConfigured = () => {
+  return !!(cloudinaryConfig.cloud_name && cloudinaryConfig.api_key && cloudinaryConfig.api_secret);
+};
+
+// Always configure cloudinary (even with undefined values) to prevent runtime errors
+// The actual validation happens in uploadToCloudinary
+cloudinary.config(cloudinaryConfig);
+
+if (!isCloudinaryConfigured()) {
+  console.warn("⚠️ Cloudinary is not configured. Image uploads will fail.");
+  console.warn("💡 Please set the following environment variables:");
+  console.warn("   - CLOUDINARY_CLOUD_NAME");
+  console.warn("   - CLOUDINARY_API_KEY");
+  console.warn("   - CLOUDINARY_API_SECRET");
+} else {
+  console.log("✅ Cloudinary configured successfully");
+}
 
 // Base folder path
 const BASE_FOLDER = "assets/folder-home-artzyra";
@@ -31,6 +50,13 @@ const FOLDER_MAP = {
  */
 export const uploadToCloudinary = async (file, imageType = "category", options = {}) => {
   try {
+    // Check if Cloudinary is configured
+    if (!isCloudinaryConfigured()) {
+      throw new Error(
+        "Cloudinary is not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables."
+      );
+    }
+
     // Validate image type
     if (!FOLDER_MAP[imageType]) {
       throw new Error(`Invalid image type: ${imageType}. Must be one of: ${Object.keys(FOLDER_MAP).join(", ")}`);
