@@ -24,7 +24,7 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
-  "https://artzyra-client.vercel.app/",
+  "https://artzyra-client.vercel.app",
 ];
 
 app.use(
