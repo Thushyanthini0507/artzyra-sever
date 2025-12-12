@@ -26,9 +26,9 @@ import { formatPaginationResponse } from "../utils/paginate.js";
 export const createPayment = asyncHandler(async (req, res) => {
   const { bookingId, paymentMethod } = req.body;
 
-  if (!bookingId || !paymentMethod) {
+  if (!bookingId) {
     throw new BadRequestError(
-      "Please provide bookingId and paymentMethod"
+      "Please provide bookingId"
     );
   }
 

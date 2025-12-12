@@ -82,7 +82,6 @@ export const getNotifications = asyncHandler(async (req, res) => {
   const sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
 
   const notifications = await Notification.find(query)
-    .populate("relatedId")
     .skip(skip)
     .limit(limitNum)
     .sort(sort);

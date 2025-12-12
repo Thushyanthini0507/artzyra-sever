@@ -1,6 +1,18 @@
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+
+let stripeInstance;
+
+const getStripe = () => {
+  if (!stripeInstance) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error("STRIPE_SECRET_KEY is missing in environment variables");
+    }
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
+  }
+  return stripeInstance;
+};
 
 /**
  * Process a payment using Stripe
@@ -8,6 +20,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
  * @returns {Object} Payment result
  */
 export const processPayment = async (paymentData) => {
+  const stripe = getStripe();
   try {
     const { amount, currency = "usd", paymentMethodId, bookingId, customerId, artistId, artistStripeAccountId } = paymentData;
 
@@ -18,15 +31,21 @@ export const processPayment = async (paymentData) => {
     const paymentIntentData = {
       amount: Math.round(amount * 100), // Convert to cents
       currency,
-      payment_method: paymentMethodId,
-      confirm: true, // Confirm immediately
-      return_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/bookings/${bookingId}/payment/success`, // Redirect URL for 3D Secure
       metadata: {
         bookingId: bookingId.toString(),
         customerId: customerId.toString(),
         artistId: artistId.toString(),
       },
+      automatic_payment_methods: {
+        enabled: true,
+      },
     };
+
+    if (paymentMethodId) {
+      paymentIntentData.payment_method = paymentMethodId;
+      paymentIntentData.confirm = true;
+      paymentIntentData.return_url = `${process.env.CLIENT_URL || 'http://localhost:3000'}/bookings/${bookingId}/payment/success`;
+    }
 
     // If artist has a connected Stripe account, use destination charges or direct charges
     // Here we use destination charges (on_behalf_of or transfer_data)
@@ -56,6 +75,7 @@ export const processPayment = async (paymentData) => {
 };
 
 export const refundPayment = async (transactionId, amount) => {
+  const stripe = getStripe();
   try {
     const refund = await stripe.refunds.create({
       payment_intent: transactionId,
@@ -77,6 +97,7 @@ export const refundPayment = async (transactionId, amount) => {
 };
 
 export const verifyPayment = async (transactionId) => {
+  const stripe = getStripe();
   try {
     const paymentIntent = await stripe.paymentIntents.retrieve(transactionId);
     
