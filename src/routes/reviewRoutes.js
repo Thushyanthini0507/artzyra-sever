@@ -7,6 +7,7 @@ import express from "express";
 import {
   createReview,
   getReviewsByArtist,
+  getAllReviews,
   getReviewById,
   updateReview,
   deleteReview,
@@ -17,6 +18,7 @@ import { verifyRole } from "../middleware/roleMiddleware.js";
 const router = express.Router();
 
 // Public routes - View reviews (no authentication required)
+router.get("/", getAllReviews);
 router.get("/artist/:artistId", getReviewsByArtist);
 router.get("/:reviewId", getReviewById);
 

@@ -101,6 +101,86 @@ export const createReview = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Get all reviews with search and filtering
+ * @route GET /api/reviews
+ * Query params: search, minRating, maxRating, startDate, endDate, page, limit, sortBy, sortOrder, artistId
+ */
+export const getAllReviews = asyncHandler(async (req, res) => {
+  const {
+    search,
+    minRating,
+    maxRating,
+    startDate,
+    endDate,
+    artistId,
+    page = 1,
+    limit = 10,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+  } = req.query;
+
+  // Base query
+  const query = {
+    isVisible: true,
+  };
+
+  // ARTIST FILTER
+  if (artistId) {
+    query.artist = artistId;
+  }
+
+  // RATING RANGE FILTER
+  if (minRating || maxRating) {
+    query.rating = {};
+    if (minRating) {
+      query.rating.$gte = parseInt(minRating);
+    }
+    if (maxRating) {
+      query.rating.$lte = parseInt(maxRating);
+    }
+  }
+
+  // DATE RANGE FILTER
+  if (startDate || endDate) {
+    query.createdAt = {};
+    if (startDate) {
+      query.createdAt.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      query.createdAt.$lte = new Date(endDate);
+    }
+  }
+
+  // SEARCH FILTER
+  if (search) {
+    query.comment = { $regex: search, $options: "i" };
+  }
+
+  // PAGINATION AND SORTING
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const limitNum = parseInt(limit);
+  const sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
+
+  const reviews = await Review.find(query)
+    .populate("customer", "name profileImage")
+    .populate("artist", "name profileImage category")
+    .populate("booking", "bookingDate startTime endTime")
+    .skip(skip)
+    .limit(limitNum)
+    .sort(sort);
+
+  const total = await Review.countDocuments(query);
+
+  const response = formatPaginationResponse(reviews, total, page, limit);
+
+  res.json({
+    success: true,
+    data: response.data,
+    pagination: response.pagination,
+  });
+});
+
+/**
  * Get reviews by artist with search and filtering
  * @route GET /api/reviews/artist/:artistId
  * Query params: search, minRating, maxRating, startDate, endDate, page, limit, sortBy, sortOrder
