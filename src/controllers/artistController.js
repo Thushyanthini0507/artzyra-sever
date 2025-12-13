@@ -151,77 +151,86 @@ export const getBookings = asyncHandler(async (req, res) => {
     sortOrder = "desc",
   } = req.query;
 
-  // Find artist profile to get the artist ID
-  const artistProfile = await Artist.findOne({ userId: req.userId });
-  if (!artistProfile) {
-    throw new NotFoundError("Artist");
-  }
-
-  // Base query - only get bookings for this artist (use Artist profile ID, not User ID)
-  const query = { artist: artistProfile._id };
-
-  // STATUS FILTERS
-  if (status) {
-    query.status = status;
-  }
-  if (paymentStatus) {
-    query.paymentStatus = paymentStatus;
-  }
-  if (category) {
-    query.category = category;
-  }
-
-  // DATE RANGE FILTER
-  if (startDate || endDate) {
-    query.bookingDate = {};
-    if (startDate) {
-      query.bookingDate.$gte = new Date(startDate);
+  try {
+    // Find artist profile to get the artist ID
+    const artistProfile = await Artist.findOne({ userId: req.userId });
+    if (!artistProfile) {
+      throw new NotFoundError("Artist");
     }
-    if (endDate) {
-      query.bookingDate.$lte = new Date(endDate);
+
+    // Base query - only get bookings for this artist (use User ID as per Booking schema)
+    const query = { artist: req.userId };
+
+    // STATUS FILTERS
+    if (status) {
+      query.status = status;
     }
-  }
-
-  // AMOUNT RANGE FILTER
-  if (minAmount || maxAmount) {
-    query.totalAmount = {};
-    if (minAmount) {
-      query.totalAmount.$gte = parseFloat(minAmount);
+    if (paymentStatus) {
+      query.paymentStatus = paymentStatus;
     }
-    if (maxAmount) {
-      query.totalAmount.$lte = parseFloat(maxAmount);
+    // Category filter removed as Booking model does not have category
+
+    // DATE RANGE FILTER
+    if (startDate || endDate) {
+      query.bookingDate = {};
+      if (startDate) {
+        query.bookingDate.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.bookingDate.$lte = new Date(endDate);
+      }
     }
+
+    // AMOUNT RANGE FILTER
+    if (minAmount || maxAmount) {
+      query.totalAmount = {};
+      if (minAmount) {
+        query.totalAmount.$gte = parseFloat(minAmount);
+      }
+      if (maxAmount) {
+        query.totalAmount.$lte = parseFloat(maxAmount);
+      }
+    }
+
+    // SEARCH FILTER
+    if (search) {
+      query.$or = [
+        { location: { $regex: search, $options: "i" } },
+        { specialRequests: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // PAGINATION AND SORTING
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const limitNum = parseInt(limit);
+    const sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
+
+    // Note: Customer populate will only return email as User model doesn't have name/profileImage
+    // TODO: Implement proper customer profile fetching
+    const bookings = await Booking.find(query)
+      .populate("customer", "email")
+      .skip(skip)
+      .limit(limitNum)
+      .sort(sort);
+
+    const total = await Booking.countDocuments(query);
+
+    const response = formatPaginationResponse(bookings, total, page, limit);
+
+    res.json({
+      success: true,
+      data: response.data,
+      pagination: response.pagination,
+    });
+  } catch (error) {
+    console.error("Error in getBookings:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching bookings",
+      error: error.message,
+      stack: error.stack
+    });
   }
-
-  // SEARCH FILTER
-  if (search) {
-    query.$or = [
-      { location: { $regex: search, $options: "i" } },
-      { specialRequests: { $regex: search, $options: "i" } },
-    ];
-  }
-
-  // PAGINATION AND SORTING
-  const skip = (parseInt(page) - 1) * parseInt(limit);
-  const limitNum = parseInt(limit);
-  const sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
-
-  const bookings = await Booking.find(query)
-    .populate("customer", "name email phone profileImage")
-    .populate("category", "name description")
-    .skip(skip)
-    .limit(limitNum)
-    .sort(sort);
-
-  const total = await Booking.countDocuments(query);
-
-  const response = formatPaginationResponse(bookings, total, page, limit);
-
-  res.json({
-    success: true,
-    data: response.data,
-    pagination: response.pagination,
-  });
 });
 
 /**
@@ -252,8 +261,8 @@ export const acceptBooking = asyncHandler(async (req, res) => {
     throw new NotFoundError("Artist");
   }
 
-  // Check authorization (compare Artist profile ID, not User ID)
-  if (booking.artist._id.toString() !== artistProfile._id.toString()) {
+  // Check authorization (compare User ID from booking with logged in User ID)
+  if (booking.artist._id.toString() !== req.userId.toString()) {
     throw new ForbiddenError("You are not authorized to accept this booking");
   }
 
@@ -271,6 +280,9 @@ export const acceptBooking = asyncHandler(async (req, res) => {
     if (customerProfile) {
       customerUserId = customerProfile.userId;
       customerName = booking.customer.name || "Customer";
+    } else {
+        // Fallback if customer is User
+        customerUserId = booking.customer._id;
     }
   } else {
     // Customer populate failed - booking.customer field contains User ID directly
@@ -278,7 +290,8 @@ export const acceptBooking = asyncHandler(async (req, res) => {
     const user = await User.findById(bookingRaw.customer);
     if (user) {
       customerUserId = user._id;
-      customerName = user.name || "Customer";
+      // user.name doesn't exist, so default to "Customer"
+      customerName = "Customer";
     } else {
       throw new NotFoundError("Customer associated with this booking");
     }
@@ -295,7 +308,7 @@ export const acceptBooking = asyncHandler(async (req, res) => {
       "Customer",
       "booking_accepted",
       "Booking Accepted",
-      `Your booking has been accepted by ${booking.artist.name}.`,
+      `Your booking has been accepted by ${artistProfile.name}.`,
       booking._id,
       "Booking"
     );
@@ -326,8 +339,8 @@ export const rejectBooking = asyncHandler(async (req, res) => {
 
   // Populate artist and customer
   const booking = await Booking.findById(bookingId)
-    .populate("artist", "name")
-    .populate("customer", "name email");
+    .populate("artist", "email")
+    .populate("customer", "email");
 
   if (!booking.artist) {
     throw new NotFoundError("Artist associated with this booking");
@@ -339,8 +352,8 @@ export const rejectBooking = asyncHandler(async (req, res) => {
     throw new NotFoundError("Artist");
   }
 
-  // Check authorization (compare Artist profile ID, not User ID)
-  if (booking.artist._id.toString() !== artistProfile._id.toString()) {
+  // Check authorization (compare User ID from booking with logged in User ID)
+  if (booking.artist._id.toString() !== req.userId.toString()) {
     throw new ForbiddenError("You are not authorized to reject this booking");
   }
 

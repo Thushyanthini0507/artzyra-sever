@@ -19,6 +19,8 @@ const notificationSchema = new mongoose.Schema(
         "booking_accepted",
         "booking_rejected",
         "booking_completed",
+        "booking_status", // Added
+        "new_booking", // Added
         "payment_received",
         "review_received",
         "approval_status",
