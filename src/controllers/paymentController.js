@@ -434,6 +434,8 @@ export const verifyPaymentIntent = asyncHandler(async (req, res) => {
     throw new BadRequestError("Payment Intent ID is required");
   }
 
+  console.log("🔍 Verifying payment intent:", paymentIntentId);
+
   // 1. Verify with Stripe
   const verification = await verifyPayment(paymentIntentId);
 
@@ -451,14 +453,22 @@ export const verifyPaymentIntent = asyncHandler(async (req, res) => {
     });
   }
 
-  // 2. Find Booking from metadata
-  const bookingId = paymentIntent.metadata.bookingId;
+  // 2. Find Booking from metadata or local Payment record
+  let bookingId = paymentIntent.metadata.bookingId;
   
   if (!bookingId) {
-    // Try to find booking by searching for this payment intent if we stored it somewhere, 
-    // or maybe we can't link it if metadata is missing.
-    // But processPayment adds metadata, so it should be there.
-    throw new BadRequestError("Booking ID missing in payment metadata");
+    console.warn("⚠️ Booking ID missing in payment metadata. Attempting fallback lookup...");
+    
+    // Fallback: Try to find payment record by stripePaymentIntentId
+    const existingPayment = await Payment.findOne({ stripePaymentIntentId: paymentIntentId });
+    
+    if (existingPayment && existingPayment.booking) {
+      bookingId = existingPayment.booking;
+      console.log("✅ Found booking ID from local payment record:", bookingId);
+    } else {
+      console.error("❌ Could not find booking ID for payment intent:", paymentIntentId);
+      throw new BadRequestError("Booking ID missing in payment metadata and could not be recovered");
+    }
   }
 
   const booking = await Booking.findById(bookingId)
