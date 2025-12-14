@@ -125,8 +125,8 @@ export const createPayment = asyncHandler(async (req, res) => {
     paymentDate: new Date(),
   });
 
-  // Update booking status to confirmed
-  booking.status = "confirmed";
+  // Update booking status to in_progress (confirmed/paid)
+  booking.status = "in_progress";
   booking.paymentStatus =
     paymentResult.status === "succeeded" ? "paid" : "pending";
   booking.payment = payment._id;
@@ -537,7 +537,7 @@ export const verifyPaymentIntent = asyncHandler(async (req, res) => {
   }
 
   // 5. Update Booking
-  booking.status = "confirmed";
+  booking.status = "in_progress";
   booking.paymentStatus = "paid";
   booking.payment = payment._id;
   await booking.save();
