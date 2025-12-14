@@ -610,13 +610,18 @@ export const getPendingArtists = asyncHandler(async (req, res) => {
 export const approveArtist = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
+  // Validate ID format
+  if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+    throw new BadRequestError("Invalid artist ID format");
+  }
+
   // Find pending artist
   const pendingArtist = await PendingArtist.findById(id)
     .select("+password")
     .populate("category");
 
   if (!pendingArtist) {
-    throw new NotFoundError("Pending artist");
+    throw new NotFoundError("Pending artist not found with the provided ID");
   }
 
   if (pendingArtist.status === "approved") {
@@ -682,22 +687,42 @@ export const approveArtist = asyncHandler(async (req, res) => {
       // This handles edge case where User was created but Artist profile wasn't
       user = existingUser;
 
+      // Determine artist type from category
+      const categoryDoc = await Category.findById(pendingArtist.category?._id || pendingArtist.category);
+      const artistType = categoryDoc?.type || "physical"; // Default to physical if not found
+
+      // Initialize subscription for physical artists
+      const subscription = {
+        status: artistType === "physical" ? "inactive" : "active", // Remote artists are active by default (no sub)
+        plan: artistType === "physical" ? "standard" : "free",
+      };
+
       // Create Artist profile from pending artist data
-      artist = await Artist.create({
-        userId: user._id,
-        name: pendingArtist.name,
-        bio: pendingArtist.bio,
-        profileImage: pendingArtist.profileImage,
-        category: pendingArtist.category._id,
-        skills: pendingArtist.skills,
-        hourlyRate: pendingArtist.hourlyRate,
-        availability: pendingArtist.availability,
-        services: pendingArtist.services || [],
-        pricing: pendingArtist.pricing,
-        deliveryTime: pendingArtist.deliveryTime,
-        status: "approved",
-        verifiedAt: new Date(),
-      });
+      try {
+        artist = await Artist.create({
+          userId: user._id,
+          name: pendingArtist.name,
+          bio: pendingArtist.bio,
+          profileImage: pendingArtist.profileImage,
+          category: pendingArtist.category?._id || pendingArtist.category,
+          artistType,
+          subscription,
+          skills: pendingArtist.skills,
+          hourlyRate: pendingArtist.hourlyRate,
+          availability: pendingArtist.availability,
+          services: pendingArtist.services || [],
+          pricing: pendingArtist.pricing,
+          deliveryTime: pendingArtist.deliveryTime,
+          status: "approved",
+          verifiedAt: new Date(),
+        });
+      } catch (error) {
+        if (error.name === "ValidationError") {
+          const validationErrors = Object.values(error.errors).map((e: any) => e.message).join(", ");
+          throw new BadRequestError(`Validation failed: ${validationErrors}`);
+        }
+        throw error;
+      }
     }
   } else {
     // User doesn't exist - create new user and artist profile
@@ -720,8 +745,17 @@ export const approveArtist = asyncHandler(async (req, res) => {
 
     // Step 2: Create Artist profile
       // Determine artist type from category
-      const categoryDoc = await Category.findById(pendingArtist.category._id);
-      const artistType = categoryDoc ? categoryDoc.type : "physical"; // Default to physical if not found (fallback)
+      const categoryId = pendingArtist.category?._id || pendingArtist.category;
+      if (!categoryId) {
+        throw new BadRequestError("Pending artist must have a valid category");
+      }
+
+      const categoryDoc = await Category.findById(categoryId);
+      if (!categoryDoc) {
+        throw new BadRequestError("Category not found for pending artist");
+      }
+
+      const artistType = categoryDoc.type || "physical"; // Default to physical if not found (fallback)
 
       // Initialize subscription for physical artists
       const subscription = {
@@ -729,23 +763,31 @@ export const approveArtist = asyncHandler(async (req, res) => {
         plan: artistType === "physical" ? "standard" : "free",
       };
 
-      artist = await Artist.create({
-        userId: user._id,
-        name: pendingArtist.name,
-        bio: pendingArtist.bio,
-        profileImage: pendingArtist.profileImage,
-        category: pendingArtist.category._id,
-        artistType,
-        subscription,
-        skills: pendingArtist.skills,
-        hourlyRate: pendingArtist.hourlyRate,
-        availability: pendingArtist.availability,
-        services: pendingArtist.services || [],
-        pricing: pendingArtist.pricing,
-        deliveryTime: pendingArtist.deliveryTime,
-        status: "approved",
-        verifiedAt: new Date(),
-      });
+      try {
+        artist = await Artist.create({
+          userId: user._id,
+          name: pendingArtist.name,
+          bio: pendingArtist.bio,
+          profileImage: pendingArtist.profileImage,
+          category: categoryId,
+          artistType,
+          subscription,
+          skills: pendingArtist.skills,
+          hourlyRate: pendingArtist.hourlyRate,
+          availability: pendingArtist.availability,
+          services: pendingArtist.services || [],
+          pricing: pendingArtist.pricing,
+          deliveryTime: pendingArtist.deliveryTime,
+          status: "approved",
+          verifiedAt: new Date(),
+        });
+      } catch (error) {
+        if (error.name === "ValidationError") {
+          const validationErrors = Object.values(error.errors).map((e: any) => e.message).join(", ");
+          throw new BadRequestError(`Validation failed: ${validationErrors}`);
+        }
+        throw error;
+      }
   }
 
   // Step 4: Update pending artist status and delete
