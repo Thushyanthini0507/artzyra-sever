@@ -12,7 +12,8 @@ const router = express.Router();
 router.use(verifyToken);
 
 router.get("/", getChats);
-router.post("/create", createChatWithArtist); // Must be before /:id to avoid route conflicts
+// Create chat route - must be before /:id to avoid route conflicts
+router.post("/create", createChatWithArtist);
 router.get("/:id", getChatById);
 router.post("/:id/messages", sendMessage);
 
