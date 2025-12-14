@@ -64,12 +64,21 @@ export const getArtists = asyncHandler(async (req, res) => {
   const [artists, total] = await Promise.all([
     Artist.find(query)
       .populate("userId", "email")
-      .populate("category", "name description image")
+      .populate("category", "name description image type")
       .skip(skip)
       .limit(limitNum)
       .sort({ createdAt: -1 }), // Sort by newest first
     Artist.countDocuments(query), // Get total count for pagination
   ]);
+
+  // Sync artistType with category type for all artists (batch update if needed)
+  // This ensures consistency when categories are updated
+  for (const artist of artists) {
+    if (artist.category && artist.category.type && artist.artistType !== artist.category.type) {
+      artist.artistType = artist.category.type;
+      await artist.save();
+    }
+  }
 
   // Format response with user email
   const formattedArtists = artists.map((artist) => {
@@ -114,10 +123,16 @@ export const getArtistById = asyncHandler(async (req, res) => {
     status: "approved",
   })
     .populate("userId", "email")
-    .populate("category", "name description image");
+    .populate("category", "name description image type");
 
   if (!artist) {
     throw new NotFoundError("Artist");
+  }
+
+  // Sync artistType with category type if they don't match
+  if (artist.category && artist.category.type && artist.artistType !== artist.category.type) {
+    artist.artistType = artist.category.type;
+    await artist.save();
   }
 
   // Format response with user email

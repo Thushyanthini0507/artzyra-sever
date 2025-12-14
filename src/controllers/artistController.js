@@ -27,11 +27,17 @@ import { formatPaginationResponse } from "../utils/paginate.js";
 export const getProfile = asyncHandler(async (req, res) => {
   // Find artist profile by userId (req.userId is the User ID)
   const artist = await Artist.findOne({ userId: req.userId })
-    .populate("category", "name description image")
+    .populate("category", "name description image type")
     .select("-password");
 
   if (!artist) {
     throw new NotFoundError("Artist");
+  }
+  
+  // Sync artistType with category type if they don't match
+  if (artist.category && artist.category.type && artist.artistType !== artist.category.type) {
+    artist.artistType = artist.category.type;
+    await artist.save();
   }
   
   // Get user data
@@ -86,7 +92,14 @@ export const updateProfile = asyncHandler(async (req, res) => {
     artistUpdateData.phone = normalizeSriLankanPhone(phone);
   }
   if (bio !== undefined) artistUpdateData.bio = bio;
-  if (category) artistUpdateData.category = category;
+  if (category) {
+    artistUpdateData.category = category;
+    // Update artistType based on the new category type
+    const categoryDoc = await Category.findById(category);
+    if (categoryDoc && categoryDoc.type) {
+      artistUpdateData.artistType = categoryDoc.type;
+    }
+  }
   if (skills) artistUpdateData.skills = skills;
   if (hourlyRate !== undefined) artistUpdateData.hourlyRate = hourlyRate;
   if (availability) artistUpdateData.availability = availability;
