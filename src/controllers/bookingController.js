@@ -44,6 +44,18 @@ export const createBooking = asyncHandler(async (req, res) => {
     throw new BadRequestError("You cannot book yourself");
   }
 
+  // Find artist profile to check type and get delivery time
+  const artistProfile = await Artist.findOne({ userId: artistId }).populate("category");
+  
+  if (!artistProfile) {
+    throw new NotFoundError("Artist not found");
+  }
+
+  // Restrict bookings for physical artists
+  if (artistProfile.artistType === "physical") {
+    throw new BadRequestError("Bookings are not available for physical artists. Please contact them via chat.");
+  }
+
   const booking = await Booking.create({
     customer: req.userId,
     artist: artistId,
@@ -54,14 +66,11 @@ export const createBooking = asyncHandler(async (req, res) => {
     location,
     notes,
     totalAmount,
+    deliveryDays: artistProfile.deliveryTime, // Snapshot delivery time
     status: "pending",
     paymentStatus: "pending",
   });
 
-  // Find artist profile for notification
-  // artistId is the User ID, so we look up the Artist profile by userId
-  const artistProfile = await Artist.findOne({ userId: artistId });
-  
   // Create notification for artist
   // Use artistProfile._id if found, otherwise fall back to artistId (though it might be wrong if it's userId)
   // Notification model expects Artist Profile ID when userModel is "Artist"

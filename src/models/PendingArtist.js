@@ -68,6 +68,18 @@ const pendingArtistSchema = new mongoose.Schema(
       },
       default: {},
     },
+    pricing: {
+      amount: { type: Number, default: 0 },
+      unit: {
+        type: String,
+        enum: ["hour", "day", "project"],
+        default: "project",
+      },
+      currency: { type: String, default: "LKR" },
+    },
+    deliveryTime: {
+      type: Number, // Days (for Remote)
+    },
     // Status
     status: {
       type: String,

@@ -16,6 +16,11 @@ const categorySchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    type: {
+      type: String,
+      enum: ["physical", "remote"],
+      required: [true, "Please select a category type"],
+    },
     isActive: {
       type: Boolean,
       default: true,

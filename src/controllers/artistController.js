@@ -68,6 +68,8 @@ export const updateProfile = asyncHandler(async (req, res) => {
     certifications,
     languages,
     location,
+    pricing,
+    deliveryTime,
   } = req.body;
 
   // Import phone validation utilities
@@ -97,6 +99,8 @@ export const updateProfile = asyncHandler(async (req, res) => {
   if (certifications !== undefined) artistUpdateData.certifications = certifications;
   if (languages !== undefined) artistUpdateData.languages = languages;
   if (location !== undefined) artistUpdateData.location = location;
+  if (pricing !== undefined) artistUpdateData.pricing = pricing;
+  if (deliveryTime !== undefined) artistUpdateData.deliveryTime = deliveryTime;
 
   // Find artist profile by userId (req.userId is the User ID)
   const artist = await Artist.findOneAndUpdate(
@@ -699,18 +703,30 @@ export const approveArtist = asyncHandler(async (req, res) => {
     );
 
     // Step 2: Create Artist profile
-    artist = await Artist.create({
-      userId: user._id,
-      name: pendingArtist.name,
-      bio: pendingArtist.bio,
-      profileImage: pendingArtist.profileImage,
-      category: pendingArtist.category._id,
-      skills: pendingArtist.skills,
-      hourlyRate: pendingArtist.hourlyRate,
-      availability: pendingArtist.availability,
-      status: "approved",
-      verifiedAt: new Date(),
-    });
+      // Determine artist type from category
+      const categoryDoc = await Category.findById(pendingArtist.category._id);
+      const artistType = categoryDoc ? categoryDoc.type : "physical"; // Default to physical if not found (fallback)
+
+      // Initialize subscription for physical artists
+      const subscription = {
+        status: artistType === "physical" ? "inactive" : "active", // Remote artists are active by default (no sub)
+        plan: artistType === "physical" ? "standard" : "free",
+      };
+
+      artist = await Artist.create({
+        userId: user._id,
+        name: pendingArtist.name,
+        bio: pendingArtist.bio,
+        profileImage: pendingArtist.profileImage,
+        category: pendingArtist.category._id,
+        artistType,
+        subscription,
+        skills: pendingArtist.skills,
+        hourlyRate: pendingArtist.hourlyRate,
+        availability: pendingArtist.availability,
+        status: "approved",
+        verifiedAt: new Date(),
+      });
   }
 
   // Step 4: Update pending artist status and delete

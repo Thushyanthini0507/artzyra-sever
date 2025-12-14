@@ -512,6 +512,17 @@ export const registerArtist = asyncHandler(async (req, res) => {
     }
   }
 
+  // Process pricing
+  let pricingData = {
+    amount: hourlyRateNum,
+    unit: "hour", // Default for backward compatibility
+    currency: "LKR"
+  };
+
+  if (req.body.pricing) {
+    pricingData = { ...pricingData, ...req.body.pricing };
+  }
+
   // Create pending artist (password will be hashed by pre-save hook)
   // Mongoose will automatically convert the plain object to a Map for the availability field
   const pendingArtist = await PendingArtist.create({
@@ -525,6 +536,8 @@ export const registerArtist = asyncHandler(async (req, res) => {
     skills: skillsArray,
     hourlyRate: hourlyRateNum,
     availability: availabilityData,
+    pricing: pricingData,
+    deliveryTime: req.body.deliveryTime,
     status: "pending",
   });
 

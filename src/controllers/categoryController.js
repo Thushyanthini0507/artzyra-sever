@@ -86,16 +86,21 @@ export const getCategoryById = asyncHandler(async (req, res) => {
  * @route POST /api/categories
  */
 export const createCategory = asyncHandler(async (req, res) => {
-  const { name, description, image } = req.body;
+  const { name, description, image, type } = req.body;
 
   if (!name) {
     throw new BadRequestError("Please provide a category name");
+  }
+
+  if (!type || !["physical", "remote"].includes(type)) {
+    throw new BadRequestError("Please provide a valid category type (physical or remote)");
   }
 
   const category = await Category.create({
     name,
     description,
     image,
+    type,
   });
 
   res.status(201).json({
@@ -112,7 +117,7 @@ export const createCategory = asyncHandler(async (req, res) => {
  */
 export const updateCategory = asyncHandler(async (req, res) => {
   const { categoryId } = req.params;
-  const { name, description, image, isActive } = req.body;
+  const { name, description, image, isActive, type } = req.body;
 
   const category = await Category.findById(categoryId);
   if (!category) {
@@ -120,10 +125,16 @@ export const updateCategory = asyncHandler(async (req, res) => {
   }
 
   const updateData = {};
-  if (name) updateData.name = name;
+  if (name !== undefined && name !== null && name.trim() !== "") updateData.name = name.trim();
   if (description !== undefined) updateData.description = description;
   if (image !== undefined) updateData.image = image;
   if (isActive !== undefined) updateData.isActive = isActive;
+  if (type !== undefined && type !== null && ["physical", "remote"].includes(type)) updateData.type = type;
+
+  // Check if there are any fields to update
+  if (Object.keys(updateData).length === 0) {
+    throw new BadRequestError("No valid fields provided for update");
+  }
 
   const updatedCategory = await Category.findByIdAndUpdate(
     categoryId,
@@ -184,9 +195,12 @@ export const getArtistsByCategory = asyncHandler(async (req, res) => {
   const { search, minRating, maxRate, page = 1, limit = 10 } = req.query;
 
   // Base query - only approved artists in this category
+  // For physical artists, they must also have an active subscription
+  // For remote artists, subscription status is 'active' by default (or ignored)
   const query = {
     category: categoryId,
     status: "approved",
+    "subscription.status": "active",
   };
 
   // RATING FILTER

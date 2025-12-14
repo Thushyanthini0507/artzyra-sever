@@ -38,7 +38,33 @@ const artistSchema = new mongoose.Schema(
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: Category,
+      ref: "Category",
+    },
+    artistType: {
+      type: String,
+      enum: ["physical", "remote"],
+      required: true, // Should be derived from category
+    },
+    subscription: {
+      status: {
+        type: String,
+        enum: ["active", "inactive", "expired"],
+        default: "inactive",
+      },
+      expiresAt: Date,
+      plan: String,
+    },
+    pricing: {
+      amount: { type: Number, default: 0 },
+      unit: {
+        type: String,
+        enum: ["hour", "day", "project"],
+        default: "project",
+      },
+      currency: { type: String, default: "LKR" },
+    },
+    deliveryTime: {
+      type: Number, // Days (for Remote)
     },
     skills: [
       {

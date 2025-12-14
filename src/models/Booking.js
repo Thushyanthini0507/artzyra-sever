@@ -28,6 +28,9 @@ const bookingSchema = new mongoose.Schema(
       type: Number, // in hours
       required: true,
     },
+    deliveryDays: {
+      type: Number, // Snapshot from Artist service at time of booking
+    },
     endTime: {
       type: String,
     },
