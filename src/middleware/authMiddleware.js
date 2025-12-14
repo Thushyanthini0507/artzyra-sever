@@ -24,12 +24,16 @@ export const asyncHandler = (fn) => {
  * Verifies JWT token and loads user based on role
  */
 export const verifyToken = asyncHandler(async (req, res, next) => {
-  console.log("verifyToken called. Headers:", req.headers.authorization);
+  console.log("🔐 verifyToken called. Request path:", req.path);
+  console.log("📋 Headers authorization:", req.headers.authorization ? "Present" : "Missing");
+  console.log("🍪 Cookie token:", req.cookies?.token ? "Present" : "Missing");
+  
   let token;
 
   // Priority 1: Extract token from cookie (preferred for security)
   if (req.cookies && req.cookies.token) {
     token = req.cookies.token;
+    console.log("✅ Token found in cookies");
   }
   // Priority 2: Extract token from Authorization header (fallback)
   else if (
@@ -37,30 +41,36 @@ export const verifyToken = asyncHandler(async (req, res, next) => {
     req.headers.authorization.startsWith("Bearer")
   ) {
     token = req.headers.authorization.split(" ")[1];
+    console.log("✅ Token found in Authorization header");
   }
 
   if (!token) {
+    console.error("❌ Authentication failed: No token provided");
     throw new UnauthorizedError("Not authorized. No token provided.");
   }
 
   try {
     // Verify token
     const decoded = verifyJwtToken(token);
+    console.log("✅ Token decoded successfully. User ID:", decoded.id, "Role:", decoded.role);
 
     // Find user in Users collection (central collection)
     const user = await User.findById(decoded.id).select("-password");
     
     if (!user) {
+      console.error("❌ User not found for decoded token ID:", decoded.id);
       throw new UnauthorizedError("User not found. Token may be invalid.");
     }
 
     // Verify role matches
     if (user.role !== decoded.role) {
+      console.error("❌ Role mismatch. Token role:", decoded.role, "User role:", user.role);
       throw new UnauthorizedError("Invalid token. Role mismatch.");
     }
 
     // Check if user is active
     if (user.isActive === false) {
+      console.error("❌ User account is deactivated:", user._id);
       throw new ForbiddenError(
         "Your account has been deactivated. Please contact support."
       );
@@ -94,15 +104,19 @@ export const verifyToken = asyncHandler(async (req, res, next) => {
     req.user = { ...user.toObject(), profile };
     req.userId = user._id;
     req.userRole = user.role;
+    console.log("✅ Authentication successful for user:", user._id, "Role:", user.role);
 
     next();
   } catch (error) {
     if (error.name === "JsonWebTokenError") {
+      console.error("❌ JWT Error: Invalid token format or signature");
       throw new UnauthorizedError("Invalid token. Please log in again.");
     }
     if (error.name === "TokenExpiredError") {
+      console.error("❌ JWT Error: Token has expired");
       throw new UnauthorizedError("Token expired. Please log in again.");
     }
+    console.error("❌ Authentication error:", error.message);
     throw error;
   }
 });

@@ -430,20 +430,35 @@ export const refundPaymentRequest = asyncHandler(async (req, res) => {
 export const verifyPaymentIntent = asyncHandler(async (req, res) => {
   const { paymentIntentId } = req.body;
 
+  console.log("🔍 Payment Verification Request:", {
+    paymentIntentId,
+    userId: req.userId,
+    userRole: req.userRole,
+    hasAuth: !!req.user,
+  });
+
   if (!paymentIntentId) {
+    console.error("❌ Missing payment intent ID in request body");
     throw new BadRequestError("Payment Intent ID is required");
   }
 
-  console.log("🔍 Verifying payment intent:", paymentIntentId);
-
   // 1. Verify with Stripe
+  console.log("📡 Calling Stripe to verify payment intent...");
   const verification = await verifyPayment(paymentIntentId);
 
   if (!verification.success) {
+    console.error("❌ Stripe verification failed:", verification.error);
     throw new BadRequestError(`Payment verification failed: ${verification.error}`);
   }
 
   const paymentIntent = verification.data;
+  console.log("✅ Stripe verification successful:", {
+    status: paymentIntent.status,
+    amount: paymentIntent.amount,
+    currency: paymentIntent.currency,
+    hasMetadata: !!paymentIntent.metadata,
+    bookingIdInMetadata: paymentIntent.metadata?.bookingId,
+  });
 
   if (paymentIntent.status !== "succeeded") {
     return res.json({
@@ -497,19 +512,26 @@ export const verifyPaymentIntent = asyncHandler(async (req, res) => {
   let payment = await Payment.findOne({ stripePaymentIntentId: paymentIntentId });
 
   if (!payment) {
-    payment = await Payment.create({
-      booking: booking._id,
-      customer: booking.customer._id,
-      artist: booking.artist._id,
-      amount: paymentIntent.amount / 100,
-      currency: paymentIntent.currency,
-      currency: paymentIntent.currency,
-      paymentMethod: paymentIntent.payment_method_types[0],
-      stripePaymentIntentId: paymentIntentId,
-      status: "completed",
-      paymentDate: new Date(),
-    });
+    console.log("💾 Creating new payment record...");
+    try {
+      payment = await Payment.create({
+        booking: booking._id,
+        customer: booking.customer._id,
+        artist: booking.artist._id,
+        amount: paymentIntent.amount / 100,
+        currency: paymentIntent.currency,
+        paymentMethod: paymentIntent.payment_method_types[0],
+        stripePaymentIntentId: paymentIntentId,
+        status: "completed",
+        paymentDate: new Date(),
+      });
+      console.log("✅ Payment record created:", payment._id);
+    } catch (error) {
+      console.error("❌ Error creating payment record:", error);
+      throw error;
+    }
   } else {
+    console.log("🔄 Updating existing payment record:", payment._id);
     payment.status = "completed";
     await payment.save();
   }
