@@ -35,6 +35,7 @@ const categories = [
     description:
       "Professional comedians and entertainers for events, shows, and performances. Stand-up comedy, MC services, and entertainment.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/comedian.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -42,6 +43,7 @@ const categories = [
     description:
       "Professional DJs for parties, weddings, corporate events, and nightclubs. Expert music mixing, sound engineering, and creating the perfect atmosphere.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/dj.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -49,6 +51,7 @@ const categories = [
     description:
       "Professional dancers and choreographers. Specialized in contemporary, hip-hop, ballroom, and various dance styles for performances and events.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/dancer.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -56,6 +59,7 @@ const categories = [
     description:
       "Event decorators and interior designers. Specialized in venue decoration, theme design, and creating beautiful event spaces.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/decorator.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -63,6 +67,7 @@ const categories = [
     description:
       "Graphic designers, logo designers, and digital artists specializing in visual design. Brand identity, UI/UX design, and creative digital solutions.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/design.jpg`,
+    type: "remote",
     isActive: true,
   },
   {
@@ -70,6 +75,7 @@ const categories = [
     description:
       "Professional event planners and coordinators. Specialized in weddings, corporate events, parties, and special celebrations. Full-service event management.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/event_planner.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -77,6 +83,7 @@ const categories = [
     description:
       "Creative florists and flower arrangers. Specialized in wedding bouquets, event decorations, centerpieces, and custom floral designs.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/florist.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -84,6 +91,7 @@ const categories = [
     description:
       "Professional hair stylists for events, weddings, photoshoots, and special occasions. Expert in cutting, coloring, and styling.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/hair_stylist.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -91,6 +99,7 @@ const categories = [
     description:
       "Professional magicians and illusionists for events, parties, and entertainment. Close-up magic, stage shows, and interactive performances.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/magician.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -98,6 +107,7 @@ const categories = [
     description:
       "Professional makeup artists for events, photoshoots, weddings, and special occasions. Expert in bridal, editorial, and special effects makeup.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/makeup_artist.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -105,6 +115,7 @@ const categories = [
     description:
       "Talented musicians for live performances, events, and recordings. Acoustic and electric performances across various genres.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/musician.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -112,6 +123,7 @@ const categories = [
     description:
       "Artists specializing in portraits, murals, custom artwork, and digital art. Bringing your vision to life with creative expertise.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/painter.jpg`,
+    type: "remote",
     isActive: true,
   },
   {
@@ -119,6 +131,7 @@ const categories = [
     description:
       "Professional photographers for events, portraits, weddings, and commercial work. Specialized in capturing beautiful moments and creating lasting memories.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/photographer.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -126,6 +139,7 @@ const categories = [
     description:
       "Professional singers and vocalists for events and performances. Specialized in jazz, pop, classical, and various music genres.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/singer.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -133,6 +147,7 @@ const categories = [
     description:
       "Professional tattoo artists and body art specialists. Custom tattoo designs, cover-ups, and artistic body modifications.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/tattoo_artist.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -140,6 +155,7 @@ const categories = [
     description:
       "Professional videographers for weddings, events, corporate videos, and commercial projects. Expert in video production, editing, and drone footage.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/videographer.jpg`,
+    type: "physical",
     isActive: true,
   },
   {
@@ -147,6 +163,7 @@ const categories = [
     description:
       "Professional voice actors and narrators. Voice-over services for commercials, videos, audiobooks, and multimedia projects.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/voice_actor.jpg`,
+    type: "remote",
     isActive: true,
   },
   {
@@ -154,6 +171,7 @@ const categories = [
     description:
       "Professional writers and content creators. Specialized in copywriting, content writing, scriptwriting, and creative writing services.",
     image: `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_150,h_150,c_fill,f_auto,q_auto/writer.jpg`,
+    type: "remote",
     isActive: true,
   },
 ];
@@ -189,6 +207,7 @@ const seedCategories = async () => {
           {
             description: categoryData.description,
             image: categoryData.image,
+            type: categoryData.type, // Update type field
             isActive: categoryData.isActive,
           },
           { new: true }
