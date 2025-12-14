@@ -125,14 +125,14 @@ export const createPayment = asyncHandler(async (req, res) => {
     paymentDate: new Date(),
   });
 
-  // Update booking status to in_progress (confirmed/paid)
+  // Update booking status to in_progress (auto-confirmed when payment succeeds)
+  // No manual approval needed - payment confirmation = booking confirmation
   booking.status = "in_progress";
   booking.paymentStatus =
     paymentResult.status === "succeeded" ? "paid" : "pending";
   booking.payment = payment._id;
-  await booking.save();
 
-  // Create or Find Chat
+  // Create or Find Chat - Enable chat access after payment confirmation
   let chat = await Chat.findOne({
     booking: booking._id,
   });
@@ -146,40 +146,46 @@ export const createPayment = asyncHandler(async (req, res) => {
       lastMessageTimestamp: new Date(),
     });
   }
-
-  // Create notification for artist
-  await createNotification(
-    Notification,
-    booking.artist._id,
-    "Artist",
-    "payment_received",
-    "Payment Received",
-    `Payment received for booking. Amount: $${booking.totalAmount}`,
-    payment._id,
-    "Payment"
-  );
   
-  await createNotification(
-    Notification,
-    booking.artist._id,
-    "Artist",
-    "booking_confirmed",
-    "Booking Confirmed",
-    `New booking confirmed with ${booking.customer.name}`,
-    booking._id,
-    "Booking"
-  );
+  // Link chat to booking
+  booking.chatRoomId = chat._id;
+  await booking.save();
 
-  // Create notification for customer
+  // Send Notifications to both parties
+  // Notify Customer: Booking confirmed
   await createNotification(
     Notification,
     booking.customer._id,
     "Customer",
     "booking_confirmed",
     "Booking Confirmed",
-    `Your booking with ${booking.artist.name} is confirmed!`,
+    `Your booking with ${booking.artist.name} has been confirmed! Payment successful. You can now chat with the artist.`,
     booking._id,
     "Booking"
+  );
+
+  // Notify Artist: New booking received
+  await createNotification(
+    Notification,
+    booking.artist._id,
+    "Artist",
+    "booking_confirmed",
+    "New Booking Received",
+    `You have a new confirmed booking from ${booking.customer.name}. Payment received: $${booking.totalAmount}. Chat is now available.`,
+    booking._id,
+    "Booking"
+  );
+  
+  // Also notify artist about payment
+  await createNotification(
+    Notification,
+    booking.artist._id,
+    "Artist",
+    "payment_received",
+    "Payment Received",
+    `Payment of $${booking.totalAmount} received for booking with ${booking.customer.name}`,
+    payment._id,
+    "Payment"
   );
 
   const populatedPayment = await Payment.findById(payment._id)
@@ -536,13 +542,13 @@ export const verifyPaymentIntent = asyncHandler(async (req, res) => {
     await payment.save();
   }
 
-  // 5. Update Booking
+  // 5. Update Booking - Auto-confirm booking when payment succeeds
+  // No manual approval needed - payment confirmation = booking confirmation
   booking.status = "in_progress";
   booking.paymentStatus = "paid";
   booking.payment = payment._id;
-  await booking.save();
 
-  // 6. Create Chat
+  // 6. Create Chat - Enable chat access after payment confirmation
   let chat = await Chat.findOne({ booking: booking._id });
   if (!chat) {
     chat = await Chat.create({
@@ -553,44 +559,46 @@ export const verifyPaymentIntent = asyncHandler(async (req, res) => {
       lastMessageTimestamp: new Date(),
     });
   }
-
-  // 7. Notifications (Idempotency check ideally needed, but for now just send)
-  // To avoid duplicate notifications, we could check if we just updated the status from pending to paid.
-  // Since we checked booking.paymentStatus === "paid" earlier, we are safe.
-
-  // Notify Artist
-  await createNotification(
-    Notification,
-    booking.artist._id,
-    "Artist",
-    "payment_received",
-    "Payment Received",
-    `Payment received for booking. Amount: $${booking.totalAmount}`,
-    payment._id,
-    "Payment"
-  );
   
-  await createNotification(
-    Notification,
-    booking.artist._id,
-    "Artist",
-    "booking_confirmed",
-    "Booking Confirmed",
-    `New booking confirmed with ${booking.customer.name}`,
-    booking._id,
-    "Booking"
-  );
+  // Link chat to booking
+  booking.chatRoomId = chat._id;
+  await booking.save();
 
-  // Notify Customer
+  // 7. Send Notifications to both parties
+  // Notify Customer: Booking confirmed
   await createNotification(
     Notification,
     booking.customer._id,
     "Customer",
     "booking_confirmed",
     "Booking Confirmed",
-    `Your booking with ${booking.artist.name} is confirmed!`,
+    `Your booking with ${booking.artist.name} has been confirmed! Payment successful. You can now chat with the artist.`,
     booking._id,
     "Booking"
+  );
+
+  // Notify Artist: New booking received
+  await createNotification(
+    Notification,
+    booking.artist._id,
+    "Artist",
+    "booking_confirmed",
+    "New Booking Received",
+    `You have a new confirmed booking from ${booking.customer.name}. Payment received: $${booking.totalAmount}. Chat is now available.`,
+    booking._id,
+    "Booking"
+  );
+  
+  // Also notify artist about payment
+  await createNotification(
+    Notification,
+    booking.artist._id,
+    "Artist",
+    "payment_received",
+    "Payment Received",
+    `Payment of $${booking.totalAmount} received for booking with ${booking.customer.name}`,
+    payment._id,
+    "Payment"
   );
 
   res.json({
