@@ -121,7 +121,7 @@ export const login = asyncHandler(async (req, res) => {
   let redirectPath = "/";
   switch (user.role) {
     case "customer":
-      redirectPath = "/customer/dashboard";
+      redirectPath = "/"; // Customers are redirected to home page
       break;
     case "artist":
       redirectPath = "/artist/dashboard";
