@@ -5,6 +5,8 @@
 import Payment from "../models/Payment.js";
 import Booking from "../models/Booking.js";
 import Chat from "../models/Chat.js";
+import Customer from "../models/Customer.js";
+import Artist from "../models/Artist.js";
 import {
   processPayment,
   refundPayment,
@@ -31,13 +33,11 @@ export const createPayment = asyncHandler(async (req, res) => {
     bookingId,
     hasPaymentMethod: !!paymentMethod,
     paymentMethodType: typeof paymentMethod,
-    body: req.body
+    body: req.body,
   });
 
   if (!bookingId) {
-    throw new BadRequestError(
-      "Please provide bookingId"
-    );
+    throw new BadRequestError("Please provide bookingId");
   }
 
   const booking = await Booking.findById(bookingId)
@@ -68,9 +68,7 @@ export const createPayment = asyncHandler(async (req, res) => {
   }
 
   if (booking.paymentStatus === "paid") {
-    throw new BadRequestError(
-      "Payment already completed for this booking"
-    );
+    throw new BadRequestError("Payment already completed for this booking");
   }
 
   console.log("Creating payment for booking:", {
@@ -93,7 +91,11 @@ export const createPayment = asyncHandler(async (req, res) => {
   if (!paymentResult.success) {
     console.error("Payment processing failed:", paymentResult);
     throw new BadRequestError(
-      `Payment processing failed: ${paymentResult.error}${paymentResult.errorCode ? ' (Code: ' + paymentResult.errorCode + ')' : ''}`
+      `Payment processing failed: ${paymentResult.error}${
+        paymentResult.errorCode
+          ? " (Code: " + paymentResult.errorCode + ")"
+          : ""
+      }`
     );
   }
 
@@ -115,7 +117,8 @@ export const createPayment = asyncHandler(async (req, res) => {
   // If paymentMethod was provided, create payment record and hold payment in escrow
   // Calculate commission (15% platform fee)
   const platformCommissionPercent = 15;
-  const platformCommissionAmount = (booking.totalAmount * platformCommissionPercent) / 100;
+  const platformCommissionAmount =
+    (booking.totalAmount * platformCommissionPercent) / 100;
   const artistPayoutAmount = booking.totalAmount - platformCommissionAmount;
 
   const payment = await Payment.create({
@@ -155,7 +158,7 @@ export const createPayment = asyncHandler(async (req, res) => {
       lastMessageTimestamp: new Date(),
     });
   }
-  
+
   // Link chat to booking
   booking.chatRoomId = chat._id;
   await booking.save();
@@ -184,7 +187,7 @@ export const createPayment = asyncHandler(async (req, res) => {
     booking._id,
     "Booking"
   );
-  
+
   // Also notify artist about payment held
   await createNotification(
     Notification,
@@ -235,9 +238,7 @@ export const getPaymentById = asyncHandler(async (req, res) => {
     req.userRole === "admin";
 
   if (!isAuthorized) {
-    throw new ForbiddenError(
-      "You are not authorized to view this payment"
-    );
+    throw new ForbiddenError("You are not authorized to view this payment");
   }
 
   res.json({
@@ -252,7 +253,7 @@ export const getPaymentById = asyncHandler(async (req, res) => {
  * Get payments with search and filtering
  * @route GET /api/payments
  * Query params: search, status, paymentMethod, customer, artist, booking, startDate, endDate, minAmount, maxAmount, page, limit, sortBy, sortOrder
- * 
+ *
  * EXPLANATION:
  * - Role-based: Customers/artists see only their payments, admins see all
  * - search: Searches in transactionId field
@@ -352,15 +353,109 @@ export const getPayments = asyncHandler(async (req, res) => {
 
   const payments = await Payment.find(query)
     .populate("booking", "bookingDate startTime endTime totalAmount")
-    .populate("customer", "name email")
-    .populate("artist", "name email")
+    .populate("customer", "_id email")
+    .populate("artist", "_id email")
     .skip(skip)
     .limit(limitNum)
     .sort(sort);
 
+  // Get all unique customer and artist user IDs
+  const customerIds = [
+    ...new Set(
+      payments
+        .map((p) => {
+          const customerId =
+            p.customer?._id?.toString() || p.customer?.toString();
+          return customerId;
+        })
+        .filter(Boolean)
+    ),
+  ];
+  const artistIds = [
+    ...new Set(
+      payments
+        .map((p) => {
+          const artistId = p.artist?._id?.toString() || p.artist?.toString();
+          return artistId;
+        })
+        .filter(Boolean)
+    ),
+  ];
+
+  // Fetch Customer and Artist profiles in parallel
+  const [customers, artists] = await Promise.all([
+    Customer.find({ userId: { $in: customerIds } })
+      .select("userId name profileImage")
+      .lean(),
+    Artist.find({ userId: { $in: artistIds } })
+      .select("userId name profileImage")
+      .lean(),
+  ]);
+
+  // Create maps for quick lookup
+  const customerMap = new Map(customers.map((c) => [c.userId.toString(), c]));
+  const artistMap = new Map(artists.map((a) => [a.userId.toString(), a]));
+
+  // Enrich payments with customer and artist names
+  const enrichedPayments = payments.map((payment) => {
+    const paymentObj = payment.toObject();
+    const customerUserId =
+      payment.customer?._id?.toString() || paymentObj.customer?._id?.toString();
+    const artistUserId =
+      payment.artist?._id?.toString() || paymentObj.artist?._id?.toString();
+
+    const customerProfile = customerUserId
+      ? customerMap.get(customerUserId)
+      : null;
+    const artistProfile = artistUserId ? artistMap.get(artistUserId) : null;
+
+    // Get customer name from profile, or fallback to email username
+    let customerName = "Unknown";
+    if (customerProfile?.name) {
+      customerName = customerProfile.name;
+    } else if (paymentObj.customer?.email) {
+      customerName = paymentObj.customer.email.split("@")[0];
+    } else if (payment.customer?.email) {
+      customerName = payment.customer.email.split("@")[0];
+    }
+
+    // Get artist name from profile, or fallback to email username
+    let artistName = "Unknown";
+    if (artistProfile?.name) {
+      artistName = artistProfile.name;
+    } else if (paymentObj.artist?.email) {
+      artistName = paymentObj.artist.email.split("@")[0];
+    } else if (payment.artist?.email) {
+      artistName = payment.artist.email.split("@")[0];
+    }
+
+    return {
+      ...paymentObj,
+      customer: {
+        ...paymentObj.customer,
+        _id: customerUserId || paymentObj.customer?._id,
+        name: customerName,
+        email: paymentObj.customer?.email || payment.customer?.email || "",
+        profileImage: customerProfile?.profileImage || "",
+      },
+      artist: {
+        ...paymentObj.artist,
+        _id: artistUserId || paymentObj.artist?._id,
+        name: artistName,
+        email: paymentObj.artist?.email || payment.artist?.email || "",
+        profileImage: artistProfile?.profileImage || "",
+      },
+    };
+  });
+
   const total = await Payment.countDocuments(query);
 
-  const response = formatPaginationResponse(payments, total, page, limit);
+  const response = formatPaginationResponse(
+    enrichedPayments,
+    total,
+    page,
+    limit
+  );
 
   res.json({
     success: true,
@@ -463,7 +558,9 @@ export const verifyPaymentIntent = asyncHandler(async (req, res) => {
 
   if (!verification.success) {
     console.error("Stripe verification failed:", verification.error);
-    throw new BadRequestError(`Payment verification failed: ${verification.error}`);
+    throw new BadRequestError(
+      `Payment verification failed: ${verification.error}`
+    );
   }
 
   const paymentIntent = verification.data;
@@ -485,19 +582,28 @@ export const verifyPaymentIntent = asyncHandler(async (req, res) => {
 
   // 2. Find Booking from metadata or local Payment record
   let bookingId = paymentIntent.metadata.bookingId;
-  
+
   if (!bookingId) {
-    console.warn("Booking ID missing in payment metadata. Attempting fallback lookup...");
-    
+    console.warn(
+      "Booking ID missing in payment metadata. Attempting fallback lookup..."
+    );
+
     // Fallback: Try to find payment record by stripePaymentIntentId
-    const existingPayment = await Payment.findOne({ stripePaymentIntentId: paymentIntentId });
-    
+    const existingPayment = await Payment.findOne({
+      stripePaymentIntentId: paymentIntentId,
+    });
+
     if (existingPayment && existingPayment.booking) {
       bookingId = existingPayment.booking;
       console.log("Found booking ID from local payment record:", bookingId);
     } else {
-      console.error("Could not find booking ID for payment intent:", paymentIntentId);
-      throw new BadRequestError("Booking ID missing in payment metadata and could not be recovered");
+      console.error(
+        "Could not find booking ID for payment intent:",
+        paymentIntentId
+      );
+      throw new BadRequestError(
+        "Booking ID missing in payment metadata and could not be recovered"
+      );
     }
   }
 
@@ -510,7 +616,10 @@ export const verifyPaymentIntent = asyncHandler(async (req, res) => {
   }
 
   // Check authorization
-  if (booking.customer._id.toString() !== req.userId.toString() && req.userRole !== "admin") {
+  if (
+    booking.customer._id.toString() !== req.userId.toString() &&
+    req.userRole !== "admin"
+  ) {
     throw new ForbiddenError("Not authorized to verify this payment");
   }
 
@@ -524,14 +633,17 @@ export const verifyPaymentIntent = asyncHandler(async (req, res) => {
   }
 
   // 4. Create Payment Record if not exists - Payment is HELD in escrow
-  let payment = await Payment.findOne({ stripePaymentIntentId: paymentIntentId });
+  let payment = await Payment.findOne({
+    stripePaymentIntentId: paymentIntentId,
+  });
 
   if (!payment) {
     console.log("Creating new payment record (held in escrow)...");
     try {
       const totalAmount = paymentIntent.amount / 100;
       const platformCommissionPercent = 15; // 15% platform commission
-      const platformCommissionAmount = (totalAmount * platformCommissionPercent) / 100;
+      const platformCommissionAmount =
+        (totalAmount * platformCommissionPercent) / 100;
       const artistPayoutAmount = totalAmount - platformCommissionAmount;
 
       payment = await Payment.create({
@@ -560,8 +672,10 @@ export const verifyPaymentIntent = asyncHandler(async (req, res) => {
     if (!payment.platformCommissionAmount) {
       const platformCommissionPercent = 15;
       payment.platformCommissionPercent = platformCommissionPercent;
-      payment.platformCommissionAmount = (payment.amount * platformCommissionPercent) / 100;
-      payment.artistPayoutAmount = payment.amount - payment.platformCommissionAmount;
+      payment.platformCommissionAmount =
+        (payment.amount * platformCommissionPercent) / 100;
+      payment.artistPayoutAmount =
+        payment.amount - payment.platformCommissionAmount;
     }
     payment.status = "held";
     await payment.save();
@@ -584,7 +698,7 @@ export const verifyPaymentIntent = asyncHandler(async (req, res) => {
       lastMessageTimestamp: new Date(),
     });
   }
-  
+
   // Link chat to booking
   booking.chatRoomId = chat._id;
   await booking.save();
@@ -613,7 +727,7 @@ export const verifyPaymentIntent = asyncHandler(async (req, res) => {
     booking._id,
     "Booking"
   );
-  
+
   // Also notify artist about payment held
   await createNotification(
     Notification,
