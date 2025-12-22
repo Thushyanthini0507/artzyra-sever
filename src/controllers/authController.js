@@ -13,6 +13,7 @@ import Category from "../models/Category.js";
 import { BadRequestError, UnauthorizedError, ConflictError, NotFoundError } from "../utils/errors.js";
 import { asyncHandler } from "../middleware/authMiddleware.js";
 import { generateToken } from "../config/jwt.js";
+import { sendApprovalEmail } from "../utils/emailService.js";
 
 /**
  * Login
@@ -564,6 +565,18 @@ export const registerArtist = asyncHandler(async (req, res) => {
     services: servicesArray,
     status: "pending",
   });
+
+  // Send registration confirmation email (optional - notifies artist their registration is pending)
+  try {
+    await sendApprovalEmail(
+      pendingArtist.email,
+      pendingArtist.name,
+      false // isApproved = false (pending approval)
+    );
+  } catch (emailError) {
+    // Log error but don't fail the registration process
+    console.error("Failed to send registration confirmation email:", emailError);
+  }
 
   return res.status(201).json({
     success: true,

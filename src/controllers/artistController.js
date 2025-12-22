@@ -11,6 +11,7 @@ import Review from "../models/Review.js";
 import Category from "../models/Category.js";
 import { isTimeSlotAvailable, createNotification } from "../utils/helpers.js";
 import Notification from "../models/Notification.js";
+import { sendApprovalEmail } from "../utils/emailService.js";
 import {
   NotFoundError,
   BadRequestError,
@@ -33,13 +34,17 @@ export const getProfile = asyncHandler(async (req, res) => {
   if (!artist) {
     throw new NotFoundError("Artist");
   }
-  
+
   // Sync artistType with category type if they don't match
-  if (artist.category && artist.category.type && artist.artistType !== artist.category.type) {
+  if (
+    artist.category &&
+    artist.category.type &&
+    artist.artistType !== artist.category.type
+  ) {
     artist.artistType = artist.category.type;
     await artist.save();
   }
-  
+
   // Get user data
   const user = await User.findById(req.userId).select("-password");
 
@@ -79,7 +84,9 @@ export const updateProfile = asyncHandler(async (req, res) => {
   } = req.body;
 
   // Import phone validation utilities
-  const { normalizeSriLankanPhone, isValidSriLankanPhone } = await import("../utils/phoneValidation.js");
+  const { normalizeSriLankanPhone, isValidSriLankanPhone } = await import(
+    "../utils/phoneValidation.js"
+  );
 
   // Separate Artist profile fields - name and phone are in Artist model, not User
   const artistUpdateData = {};
@@ -87,7 +94,9 @@ export const updateProfile = asyncHandler(async (req, res) => {
   if (phone) {
     // Validate and normalize phone number
     if (!isValidSriLankanPhone(phone)) {
-      throw new BadRequestError("Please provide a valid Sri Lankan phone number (e.g., 0712345678 or 712345678)");
+      throw new BadRequestError(
+        "Please provide a valid Sri Lankan phone number (e.g., 0712345678 or 712345678)"
+      );
     }
     artistUpdateData.phone = normalizeSriLankanPhone(phone);
   }
@@ -109,7 +118,8 @@ export const updateProfile = asyncHandler(async (req, res) => {
   if (socialLinks !== undefined) artistUpdateData.socialLinks = socialLinks;
   if (experience !== undefined) artistUpdateData.experience = experience;
   if (education !== undefined) artistUpdateData.education = education;
-  if (certifications !== undefined) artistUpdateData.certifications = certifications;
+  if (certifications !== undefined)
+    artistUpdateData.certifications = certifications;
   if (languages !== undefined) artistUpdateData.languages = languages;
   if (location !== undefined) artistUpdateData.location = location;
   if (pricing !== undefined) artistUpdateData.pricing = pricing;
@@ -130,7 +140,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
   if (!artist) {
     throw new NotFoundError("Artist");
   }
-  
+
   // Get updated user data
   const user = await User.findById(req.userId).select("-password");
 
@@ -184,10 +194,14 @@ export const getBookings = asyncHandler(async (req, res) => {
     console.log("Initial query:", query);
 
     // STATUS FILTERS
-    if (status && status !== 'undefined' && status !== 'null') {
+    if (status && status !== "undefined" && status !== "null") {
       query.status = status;
     }
-    if (paymentStatus && paymentStatus !== 'undefined' && paymentStatus !== 'null') {
+    if (
+      paymentStatus &&
+      paymentStatus !== "undefined" &&
+      paymentStatus !== "null"
+    ) {
       query.paymentStatus = paymentStatus;
     }
 
@@ -221,7 +235,7 @@ export const getBookings = asyncHandler(async (req, res) => {
     }
 
     // SEARCH FILTER
-    if (search && search.trim() !== '') {
+    if (search && search.trim() !== "") {
       query.$or = [
         { location: { $regex: search, $options: "i" } },
         { specialRequests: { $regex: search, $options: "i" } },
@@ -236,7 +250,14 @@ export const getBookings = asyncHandler(async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
     const sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
 
-    console.log("Executing Booking.find with sort:", sort, "skip:", skip, "limit:", limitNum);
+    console.log(
+      "Executing Booking.find with sort:",
+      sort,
+      "skip:",
+      skip,
+      "limit:",
+      limitNum
+    );
 
     // Fetch bookings with customer User data
     const bookings = await Booking.find(query)
@@ -249,37 +270,51 @@ export const getBookings = asyncHandler(async (req, res) => {
     console.log("Bookings found:", bookings.length);
 
     // Fetch Customer profiles for all customer IDs to get names
-    const customerUserIds = bookings.map(b => b.customer?._id || b.customer).filter(Boolean);
-    const customerProfiles = await Customer.find({ userId: { $in: customerUserIds } })
+    const customerUserIds = bookings
+      .map((b) => b.customer?._id || b.customer)
+      .filter(Boolean);
+    const customerProfiles = await Customer.find({
+      userId: { $in: customerUserIds },
+    })
       .select("userId name profileImage email")
       .lean();
 
     // Create a map of userId -> customer profile for quick lookup
     const customerMap = new Map();
-    customerProfiles.forEach(profile => {
+    customerProfiles.forEach((profile) => {
       customerMap.set(profile.userId.toString(), profile);
     });
 
     // Merge customer profile data into bookings
-    const bookingsWithCustomerData = bookings.map(booking => {
+    const bookingsWithCustomerData = bookings.map((booking) => {
       const customerUserId = booking.customer?._id || booking.customer;
-      const customerProfile = customerUserId ? customerMap.get(customerUserId.toString()) : null;
-      
+      const customerProfile = customerUserId
+        ? customerMap.get(customerUserId.toString())
+        : null;
+
       return {
         ...booking,
         customer: {
           _id: customerUserId,
           email: booking.customer?.email || customerProfile?.email || "",
           name: customerProfile?.name || booking.customer?.name || "N/A",
-          profileImage: customerProfile?.profileImage || booking.customer?.profileImage || "",
-        }
+          profileImage:
+            customerProfile?.profileImage ||
+            booking.customer?.profileImage ||
+            "",
+        },
       };
     });
 
     const total = await Booking.countDocuments(query);
     console.log("Total documents:", total);
 
-    const response = formatPaginationResponse(bookingsWithCustomerData, total, pageNum, limitNum);
+    const response = formatPaginationResponse(
+      bookingsWithCustomerData,
+      total,
+      pageNum,
+      limitNum
+    );
 
     res.json({
       success: true,
@@ -288,13 +323,13 @@ export const getBookings = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error("Error in getBookings:", error);
-    
+
     // If it's a known AppError, use its status code
     if (error.statusCode) {
       return res.status(error.statusCode).json({
         success: false,
         message: error.message,
-        error: error.message
+        error: error.message,
       });
     }
 
@@ -302,7 +337,7 @@ export const getBookings = asyncHandler(async (req, res) => {
       success: false,
       message: "Error fetching bookings",
       error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 });
@@ -355,8 +390,8 @@ export const acceptBooking = asyncHandler(async (req, res) => {
       customerUserId = customerProfile.userId;
       customerName = booking.customer.name || "Customer";
     } else {
-        // Fallback if customer is User
-        customerUserId = booking.customer._id;
+      // Fallback if customer is User
+      customerUserId = booking.customer._id;
     }
   } else {
     // Customer populate failed - booking.customer field contains User ID directly
@@ -717,7 +752,9 @@ export const approveArtist = asyncHandler(async (req, res) => {
       user = existingUser;
 
       // Determine artist type from category
-      const categoryDoc = await Category.findById(pendingArtist.category?._id || pendingArtist.category);
+      const categoryDoc = await Category.findById(
+        pendingArtist.category?._id || pendingArtist.category
+      );
       const artistType = categoryDoc?.type || "physical"; // Default to physical if not found
 
       // Initialize subscription for physical artists
@@ -747,7 +784,9 @@ export const approveArtist = asyncHandler(async (req, res) => {
         });
       } catch (error) {
         if (error.name === "ValidationError") {
-          const validationErrors = Object.values(error.errors).map((e) => e.message).join(", ");
+          const validationErrors = Object.values(error.errors)
+            .map((e) => e.message)
+            .join(", ");
           throw new BadRequestError(`Validation failed: ${validationErrors}`);
         }
         throw error;
@@ -773,55 +812,89 @@ export const approveArtist = asyncHandler(async (req, res) => {
     );
 
     // Step 2: Create Artist profile
-      // Determine artist type from category
-      const categoryId = pendingArtist.category?._id || pendingArtist.category;
-      if (!categoryId) {
-        throw new BadRequestError("Pending artist must have a valid category");
+    // Determine artist type from category
+    const categoryId = pendingArtist.category?._id || pendingArtist.category;
+    if (!categoryId) {
+      throw new BadRequestError("Pending artist must have a valid category");
+    }
+
+    const categoryDoc = await Category.findById(categoryId);
+    if (!categoryDoc) {
+      throw new BadRequestError("Category not found for pending artist");
+    }
+
+    const artistType = categoryDoc.type || "physical"; // Default to physical if not found (fallback)
+
+    // Initialize subscription for physical artists
+    const subscription = {
+      status: artistType === "physical" ? "inactive" : "active", // Remote artists are active by default (no sub)
+      plan: artistType === "physical" ? "standard" : "free",
+    };
+
+    try {
+      artist = await Artist.create({
+        userId: user._id,
+        name: pendingArtist.name,
+        bio: pendingArtist.bio,
+        profileImage: pendingArtist.profileImage,
+        category: categoryId,
+        artistType,
+        subscription,
+        skills: pendingArtist.skills,
+        hourlyRate: pendingArtist.hourlyRate,
+        availability: pendingArtist.availability,
+        services: pendingArtist.services || [],
+        pricing: pendingArtist.pricing,
+        deliveryTime: pendingArtist.deliveryTime,
+        status: "approved",
+        verifiedAt: new Date(),
+      });
+    } catch (error) {
+      if (error.name === "ValidationError") {
+        const validationErrors = Object.values(error.errors)
+          .map((e) => e.message)
+          .join(", ");
+        throw new BadRequestError(`Validation failed: ${validationErrors}`);
       }
-
-      const categoryDoc = await Category.findById(categoryId);
-      if (!categoryDoc) {
-        throw new BadRequestError("Category not found for pending artist");
-      }
-
-      const artistType = categoryDoc.type || "physical"; // Default to physical if not found (fallback)
-
-      // Initialize subscription for physical artists
-      const subscription = {
-        status: artistType === "physical" ? "inactive" : "active", // Remote artists are active by default (no sub)
-        plan: artistType === "physical" ? "standard" : "free",
-      };
-
-      try {
-        artist = await Artist.create({
-          userId: user._id,
-          name: pendingArtist.name,
-          bio: pendingArtist.bio,
-          profileImage: pendingArtist.profileImage,
-          category: categoryId,
-          artistType,
-          subscription,
-          skills: pendingArtist.skills,
-          hourlyRate: pendingArtist.hourlyRate,
-          availability: pendingArtist.availability,
-          services: pendingArtist.services || [],
-          pricing: pendingArtist.pricing,
-          deliveryTime: pendingArtist.deliveryTime,
-          status: "approved",
-          verifiedAt: new Date(),
-        });
-      } catch (error) {
-        if (error.name === "ValidationError") {
-          const validationErrors = Object.values(error.errors).map((e) => e.message).join(", ");
-          throw new BadRequestError(`Validation failed: ${validationErrors}`);
-        }
-        throw error;
-      }
+      throw error;
+    }
   }
 
   // Step 4: Update pending artist status and delete
   pendingArtist.status = "approved";
   await pendingArtist.save();
+
+  // Step 5: Send approval email notification to the artist
+  let emailSent = false;
+  let emailError = null;
+  try {
+    console.log(`Attempting to send approval email to: ${pendingArtist.email}`);
+    const emailResult = await sendApprovalEmail(
+      pendingArtist.email,
+      pendingArtist.name || "Artist",
+      true // isApproved = true
+    );
+    if (emailResult && emailResult.success) {
+      emailSent = true;
+      console.log(
+        `✅ Approval email sent successfully to ${pendingArtist.email}`
+      );
+    } else {
+      emailError = emailResult?.error || "Unknown error";
+      console.warn(
+        `⚠️ Failed to send approval email to ${pendingArtist.email}:`,
+        emailError
+      );
+    }
+  } catch (emailErr) {
+    // Log error but don't fail the approval process
+    emailError = emailErr.message || emailErr.toString();
+    console.error(
+      `❌ Error sending approval email to ${pendingArtist.email}:`,
+      emailError
+    );
+  }
+
   await PendingArtist.findByIdAndDelete(id);
 
   // Populate artist with category for response
@@ -840,6 +913,11 @@ export const approveArtist = asyncHandler(async (req, res) => {
         isActive: user.isActive,
       },
       artist: populatedArtist,
+      emailNotification: {
+        sent: emailSent,
+        recipient: pendingArtist.email,
+        error: emailError || null,
+      },
     },
   });
 });
